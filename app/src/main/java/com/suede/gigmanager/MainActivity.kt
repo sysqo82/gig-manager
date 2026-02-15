@@ -24,6 +24,10 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import android.view.Menu
+import android.view.MenuItem
+import android.graphics.BitmapFactory
+import android.provider.Settings
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -59,6 +63,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Apply saved settings (owner/app label/icon)
+        applySavedSettings()
+
         // Initialize data manager
         dataManager = GigDataManager(this)
 
@@ -73,6 +80,58 @@ class MainActivity : AppCompatActivity() {
         
         // Setup button listeners
         setupButtonListeners()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        applySavedSettings()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun applySavedSettings() {
+        val prefs = getSharedPreferences("gig_prefs", MODE_PRIVATE)
+        val owner = prefs.getString("owner_name", "")
+        val label = prefs.getString("app_label", null)
+        val iconUriStr = prefs.getString("app_icon_uri", null)
+
+        // TitleText (in layout) should show "<owner> Tour Manager" or default placeholder
+        val titleTextView = findViewById<TextView>(R.id.titleText)
+        if (!owner.isNullOrEmpty()) {
+            titleTextView.text = "$owner Tour Manager"
+        } else {
+            titleTextView.text = "_____ Tour Manager"
+        }
+
+        // ActionBar / black row label
+        supportActionBar?.title = label ?: getString(R.string.app_name)
+
+        // If user provided an image, try to show it in the action bar as logo
+        if (!iconUriStr.isNullOrEmpty()) {
+            try {
+                val uri = android.net.Uri.parse(iconUriStr)
+                contentResolver.openInputStream(uri)?.use { stream ->
+                    val bmp = BitmapFactory.decodeStream(stream)
+                    val drawable = android.graphics.drawable.BitmapDrawable(resources, bmp)
+                    supportActionBar?.setDisplayShowHomeEnabled(true)
+                    supportActionBar?.setLogo(drawable)
+                    supportActionBar?.setDisplayUseLogoEnabled(true)
+                }
+            } catch (_: Exception) {}
+        }
     }
 
     private fun initializeViews() {
