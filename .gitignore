@@ -1,0 +1,53 @@
+# Gradle
+.gradle/
+/build/
+/captures/
+/.gradle
+
+# Kotlin
+*.iml
+*.kotlin_module
+
+# Android Studio
+.idea/
+*.iml
+local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+.DS_Store
+
+# Build generated
+/app/build/
+/build/
+
+# Log files
+*.log
+
+# Keystore files
+*.jks
+
+# Android specific
+*.apk
+*.ap_
+*.aab
+*.keystore
+
+# Generated files
+**/generated/**
+**/build/**
+
+# IntelliJ
+out/
+*.iml
+.gradle
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
