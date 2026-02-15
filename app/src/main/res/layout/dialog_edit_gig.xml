@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add/Edit Gig"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Date:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <EditText
+            android:id="@+id/editDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Select date"
+            android:padding="12dp"
+            android:focusable="false"
+            android:clickable="true"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="City &amp; Venue:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <EditText
+            android:id="@+id/editCityVenue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="e.g., Folkstone Leas Cliff Hall"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tickets With Me:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <Spinner
+            android:id="@+id/spinnerTicketsWithMe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Where Tickets Are:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <EditText
+            android:id="@+id/editWhereTickets"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Location of tickets"
+            android:padding="12dp"
+            android:minLines="2"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Accommodation:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <EditText
+            android:id="@+id/editAccommodation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Full hotel address"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Where the accommodation is booked:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <EditText
+            android:id="@+id/editWhereAccomBought"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="e.g., Booking.com"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Accommodation Dates:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <EditText
+            android:id="@+id/editAccomDates"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="e.g., 30-31 January"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cost + Paid/Pay Back:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <EditText
+            android:id="@+id/editCost"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Cost details"
+            android:padding="12dp"
+            android:minLines="2"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Paid?"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <Spinner
+            android:id="@+id/spinnerPaid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Accommodation Comments:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <EditText
+            android:id="@+id/editAccomComments"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Additional notes"
+            android:padding="12dp"
+            android:minLines="2"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Travel Details:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <EditText
+            android:id="@+id/editTravelDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Travel information"
+            android:padding="12dp"
+            android:minLines="3"
+            android:layout_marginBottom="16dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnCancel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Cancel"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btnSave"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Save"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
