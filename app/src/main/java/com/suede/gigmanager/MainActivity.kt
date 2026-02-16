@@ -91,6 +91,10 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Launched from shortcut", Toast.LENGTH_SHORT).show()
         }
 
+        // Detect if launched from widget
+        val fromWidget = intent?.getBooleanExtra("from_widget", false) == true
+        val gigIndexFromWidget = intent?.getIntExtra("show_gig_index", -1)
+
         // Initialize views
         initializeViews()
 
@@ -99,6 +103,12 @@ class MainActivity : AppCompatActivity() {
 
         // Setup spinner
         setupVenueSpinner()
+        
+        // If launched from widget, select the gig that widget passed
+        if (fromWidget && gigIndexFromWidget != null && gigIndexFromWidget >= 0 && gigIndexFromWidget < gigs.size) {
+            // Spinner position is gigIndex + 1 (because position 0 is "Select a gig")
+            venueSpinner.setSelection(gigIndexFromWidget + 1)
+        }
         
         // Setup button listeners
         setupButtonListeners()
@@ -208,6 +218,7 @@ class MainActivity : AppCompatActivity() {
                         val newIndex = gigs.indexOfFirst { it == updatedGig }.takeIf { it >= 0 } ?: 0
                         selectedGigIndex = newIndex
                         venueSpinner.setSelection(newIndex + 1)
+                        refreshWidget()
                     }
                 }
             }
@@ -435,6 +446,7 @@ class MainActivity : AppCompatActivity() {
             if (success) {
                 loadGigsData()
                 updateSpinner()
+                refreshWidget()
                 
                 if (index >= 0) {
                         // After updating, the list may have been re-sorted. Find the actual index.
@@ -466,6 +478,7 @@ class MainActivity : AppCompatActivity() {
                     loadGigsData()
                     updateSpinner()
                     venueSpinner.setSelection(0)
+                    refreshWidget()
                     Toast.makeText(this, "Gig deleted", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, "Error deleting gig", Toast.LENGTH_SHORT).show()
@@ -541,5 +554,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         textView.text = builder
+    }
+
+    private fun refreshWidget() {
+        // Send broadcast to update widget
+        val broadcastIntent = Intent("com.suede.gigmanager.GIGS_UPDATED")
+        sendBroadcast(broadcastIntent)
     }
 }

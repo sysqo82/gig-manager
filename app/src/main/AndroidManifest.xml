@@ -18,6 +18,17 @@
             </intent-filter>
         </activity>
         <activity android:name=".SettingsActivity" android:exported="false" />
+        <receiver
+            android:name=".GigWidget"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.suede.gigmanager.GIGS_UPDATED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/gig_widget_info" />
+        </receiver>
     </application>
 
 </manifest>

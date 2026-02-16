@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@android:color/white">
+
+    <!-- Tour Name Header -->
+    <TextView
+        android:id="@+id/widget_tour_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Tour Name"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        android:layout_marginBottom="8dp"
+        android:ellipsize="end"
+        android:maxLines="1" />
+
+    <!-- Upcoming Gig Section -->
+    <LinearLayout
+        android:id="@+id/widget_gig_date_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@android:color/darker_gray"
+        android:padding="8dp"
+        android:contentDescription="Upcoming gig details - tap to view full information">
+
+        <!-- Gig Date -->
+        <TextView
+            android:id="@+id/widget_gig_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Loading..."
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="@android:color/white"
+            android:ellipsize="end"
+            android:maxLines="1" />
+
+        <!-- Gig Location -->
+        <TextView
+            android:id="@+id/widget_gig_location"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Location"
+            android:textSize="14sp"
+            android:textColor="#cccccc"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="2" />
+
+    </LinearLayout>
+
+    <!-- Footer text -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Tap to view details"
+        android:textSize="10sp"
+        android:textColor="#999999"
+        android:layout_marginTop="8dp"
+        android:gravity="center" />
+
+</LinearLayout>
