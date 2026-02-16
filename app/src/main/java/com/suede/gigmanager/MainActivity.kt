@@ -23,6 +23,9 @@ import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
@@ -66,8 +69,27 @@ class MainActivity : AppCompatActivity() {
         // Apply saved settings (owner/app label/icon)
         applySavedSettings()
 
+        // Apply system window insets so content is not hidden by status bar / notch
+        try {
+            val rootView: View? = findViewById(R.id.rootScroll)
+            rootView?.let { rv ->
+                ViewCompat.setOnApplyWindowInsetsListener(rv) { v, insets ->
+                    // Get status bar inset and add it to current top padding
+                    val sysInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+                    v.setPadding(v.paddingLeft, sysInsets.top + 8 /* extra spacing */, v.paddingRight, v.paddingBottom)
+                    WindowInsetsCompat.CONSUMED
+                }
+                ViewCompat.requestApplyInsets(rv)
+            }
+        } catch (_: Exception) {}
+
         // Initialize data manager
         dataManager = GigDataManager(this)
+        
+        // Detect if launched from our pinned shortcut
+        if (intent?.getBooleanExtra("from_shortcut", false) == true) {
+            Toast.makeText(this, "Launched from shortcut", Toast.LENGTH_SHORT).show()
+        }
 
         // Initialize views
         initializeViews()
