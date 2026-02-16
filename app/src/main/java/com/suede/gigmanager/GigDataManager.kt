@@ -23,13 +23,14 @@ class GigDataManager(private val context: Context) {
             // Load from internal storage (user's modifications)
             try {
                 val json = file.readText()
+                if (json.isBlank()) return loadDefaultGigs()
+                
                 val type = object : TypeToken<List<Gig>>() {}.type
-                val gigs: List<Gig> = gson.fromJson(json, type)
+                val gigs: List<Gig>? = gson.fromJson(json, type)
+                
+                if (gigs == null) return loadDefaultGigs()
+
                 val sorted = gigs.sortedWith(compareBy(nullsLast()) { parseGigDate(it) })
-                if (gigs != sorted) {
-                    // persist the sorted order so future loads reflect it
-                    saveGigs(sorted)
-                }
                 return sorted
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -50,9 +51,11 @@ class GigDataManager(private val context: Context) {
             val inputStream = context.resources.openRawResource(R.raw.gigs_data)
             val reader = InputStreamReader(inputStream)
             val type = object : TypeToken<List<Gig>>() {}.type
-            val gigs: List<Gig> = gson.fromJson(reader, type)
+            val gigs: List<Gig>? = gson.fromJson(reader, type)
             reader.close()
-            gigs.sortedWith(compareBy(nullsLast()) { parseGigDate(it) })
+            
+            val result = gigs ?: emptyList()
+            result.sortedWith(compareBy(nullsLast()) { parseGigDate(it) })
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
@@ -129,5 +132,21 @@ class GigDataManager(private val context: Context) {
             return saveGigs(gigs)
         }
         return false
+    }
+
+    /**
+     * Return the index of the next upcoming gig (today or later) that is not marked complete.
+     * Returns null if there is no suitable upcoming gig.
+     */
+    fun getNextUpcomingGigIndex(): Int? {
+        val gigs = loadGigs()
+        val today = LocalDate.now()
+        for ((idx, gig) in gigs.withIndex()) {
+            val d = parseGigDate(gig)
+            if (d != null && (d.isEqual(today) || d.isAfter(today)) && gig.isComplete != true) {
+                return idx
+            }
+        }
+        return null
     }
 }
