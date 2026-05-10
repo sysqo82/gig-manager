@@ -395,7 +395,7 @@ class MainActivity : AppCompatActivity() {
                 cityWordScroll.visibility = View.VISIBLE
                 labelCityPicker.visibility = View.VISIBLE
                 words.forEach { word ->
-                    val chip = Chip(android.view.ContextThemeWrapper(this, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Action))
+                    val chip = Chip(this)
                     chip.text = word
                     chip.isCheckable = false
                     chip.setOnClickListener { editCity.setText(word) }
