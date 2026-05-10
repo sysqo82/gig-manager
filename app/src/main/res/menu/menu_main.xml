@@ -14,10 +14,4 @@
         android:icon="@android:drawable/ic_menu_upload"
         app:showAsAction="never" />
 
-    <item
-        android:id="@+id/action_restore"
-        android:title="Restore from Server"
-        android:icon="@android:drawable/ic_menu_revert"
-        app:showAsAction="never" />
-
 </menu>

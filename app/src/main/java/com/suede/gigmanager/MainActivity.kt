@@ -302,6 +302,12 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        menu.findItem(R.id.action_sync_account)?.title =
+            if (syncService.isLoggedIn()) "Sync Account" else "Login / Register"
+        return super.onPrepareOptionsMenu(menu)
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.action_archives) {
             openArchivesDrawer()
@@ -311,87 +317,7 @@ class MainActivity : AppCompatActivity() {
             AccountActivity.start(this)
             return true
         }
-        if (item.itemId == R.id.action_restore) {
-            showRestoreConfirmation()
-            return true
-        }
         return super.onOptionsItemSelected(item)
-    }
-
-    private fun showRestoreConfirmation() {
-        if (!syncService.isLoggedIn()) {
-            AlertDialog.Builder(this)
-                .setTitle("Restore from Server")
-                .setMessage("You're not signed in to a sync account. Go to Sync Account from the menu first.")
-                .setPositiveButton("OK", null)
-                .show()
-            return
-        }
-
-        // Fetch server metadata first so we can show the last-synced timestamp
-        val progress = AlertDialog.Builder(this)
-            .setMessage("Checking server…")
-            .setCancelable(false)
-            .create()
-        progress.show()
-
-        Thread {
-            val result = syncService.pull()
-            runOnUiThread {
-                progress.dismiss()
-                when (result) {
-                    is ApiResult.Error -> {
-                        AlertDialog.Builder(this)
-                            .setTitle("Restore Failed")
-                            .setMessage(result.message)
-                            .setPositiveButton("OK", null)
-                            .show()
-                    }
-                    is ApiResult.Success -> {
-                        val data = result.data
-                        val syncedAt = data.lastSyncedAt ?: "unknown"
-                        val gigCount = data.gigs.size
-                        val archiveCount = data.archives.size
-                        AlertDialog.Builder(this)
-                            .setTitle("Restore from Server")
-                            .setMessage(
-                                "Server copy:\n" +
-                                "• Tour: ${data.tourName.ifEmpty { "(unnamed)" }}\n" +
-                                "• $gigCount gig${if (gigCount != 1) "s" else ""}, $archiveCount archive${if (archiveCount != 1) "s" else ""}\n" +
-                                "• Last synced: $syncedAt\n\n" +
-                                "Your current local data will be replaced. " +
-                                "A local backup will be saved first so nothing is permanently lost."
-                            )
-                            .setPositiveButton("Restore") { _, _ -> executeRestore(data) }
-                            .setNegativeButton("Cancel", null)
-                            .show()
-                    }
-                }
-            }
-        }.start()
-    }
-
-    private fun executeRestore(data: SyncData) {
-        // 1. Save a pre-restore snapshot of current local data
-        dataManager.savePreRestoreBackup()
-
-        // 2. Restore archives (write each archive file)
-        dataManager.restoreArchives(data.archives)
-
-        // 3. Restore active gigs and tour name
-        dataManager.saveGigsQuiet(data.gigs)
-        dataManager.setCurrentTourName(data.tourName.ifEmpty { "Restored Tour" })
-
-        // 4. Refresh UI
-        supportActionBar?.title = dataManager.getCurrentTourName()
-        loadGigsData()
-        updateSpinner()
-        venueSpinner.setSelection(0)
-        selectedGigIndex = -1
-        detailsContainer.visibility = View.GONE
-        actionButtonsContainer.visibility = View.GONE
-
-        Toast.makeText(this, "Data restored from server", Toast.LENGTH_LONG).show()
     }
 
     private fun openArchivesDrawer() {
