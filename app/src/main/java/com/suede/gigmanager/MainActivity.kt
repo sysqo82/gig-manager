@@ -9,14 +9,10 @@ import android.graphics.Paint
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.text.Editable
 import android.text.Spannable
 import android.text.SpannableStringBuilder
-import android.text.TextWatcher
 import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -261,8 +257,7 @@ class MainActivity : AppCompatActivity() {
         val spinnerItems = mutableListOf("Select a city...")
         
         spinnerItems.addAll(gigs.map { 
-            val display = it.city?.ifEmpty { null } ?: it.cityVenue ?: "Unknown"
-            "${formatDisplayDate(it.date)} - $display"
+            "${formatDisplayDate(it.date)} - ${it.cityVenue ?: "Unknown"}"
         })
 
         val adapter = object : ArrayAdapter<String>(
@@ -379,36 +374,7 @@ class MainActivity : AppCompatActivity() {
         
         val editDate = dialogView.findViewById<EditText>(R.id.editDate)
         val editCityVenue = dialogView.findViewById<EditText>(R.id.editCityVenue)
-        val editCity = dialogView.findViewById<EditText>(R.id.editCity)
-        val cityWordScroll = dialogView.findViewById<View>(R.id.cityWordScroll)
-        val labelCityPicker = dialogView.findViewById<TextView>(R.id.labelCityPicker)
-        val chipGroupCityWords = dialogView.findViewById<ChipGroup>(R.id.chipGroupCityWords)
         val spinnerTicketsWithMe = dialogView.findViewById<Spinner>(R.id.spinnerTicketsWithMe)
-
-        fun updateCityChips(text: String) {
-            chipGroupCityWords.removeAllViews()
-            val words = text.trim().split(Regex("\\s+")).filter { it.length > 1 }
-            if (words.isEmpty()) {
-                cityWordScroll.visibility = View.GONE
-                labelCityPicker.visibility = View.GONE
-            } else {
-                cityWordScroll.visibility = View.VISIBLE
-                labelCityPicker.visibility = View.VISIBLE
-                words.forEach { word ->
-                    val chip = Chip(this)
-                    chip.text = word
-                    chip.isCheckable = false
-                    chip.setOnClickListener { editCity.setText(word) }
-                    chipGroupCityWords.addView(chip)
-                }
-            }
-        }
-
-        editCityVenue.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) { updateCityChips(s?.toString() ?: "") }
-        })
         val editWhereTickets = dialogView.findViewById<EditText>(R.id.editWhereTickets)
         val editAccommodation = dialogView.findViewById<EditText>(R.id.editAccommodation)
         val editWhereAccomBought = dialogView.findViewById<EditText>(R.id.editWhereAccomBought)
@@ -441,8 +407,6 @@ class MainActivity : AppCompatActivity() {
         gig?.let {
             editDate.setText(it.date ?: "")
             editCityVenue.setText(it.cityVenue ?: "")
-            editCity.setText(it.city ?: "")
-            updateCityChips(it.cityVenue ?: "")
 
             val ticketsIndex = yesNoOptions.indexOf(it.ticketsWithMe ?: "")
             if (ticketsIndex >= 0) spinnerTicketsWithMe.setSelection(ticketsIndex)
@@ -472,7 +436,6 @@ class MainActivity : AppCompatActivity() {
             val newGig = Gig(
                 date = editDate.text.toString(),
                 cityVenue = editCityVenue.text.toString(),
-                city = editCity.text.toString().trim().ifEmpty { null },
                 ticketsWithMe = spinnerTicketsWithMe.selectedItem.toString(),
                 whereTicketsAre = editWhereTickets.text.toString(),
                 accommodation = editAccommodation.text.toString(),
