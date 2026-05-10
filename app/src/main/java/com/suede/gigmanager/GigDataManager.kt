@@ -5,7 +5,6 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
-import java.io.InputStreamReader
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -65,28 +64,9 @@ class GigDataManager(private val context: Context) {
                 return sorted
             } catch (e: Exception) {
                 e.printStackTrace()
-                loadDefaultGigs()
+                emptyList()
             }
         } else {
-            // Load from raw resources (initial data)
-            val gigs = loadDefaultGigs()
-            // Save it to internal storage for future modifications (sorted)
-            val sorted = gigs.sortedWith(compareBy(nullsLast()) { parseGigDate(it) })
-            saveGigs(sorted)
-            sorted
-        }
-    }
-
-    private fun loadDefaultGigs(): List<Gig> {
-        return try {
-            val inputStream = context.resources.openRawResource(R.raw.gigs_data)
-            val reader = InputStreamReader(inputStream)
-            val type = object : TypeToken<List<Gig>>() {}.type
-            val gigs: List<Gig> = gson.fromJson(reader, type)
-            reader.close()
-            gigs.sortedWith(compareBy(nullsLast()) { parseGigDate(it) })
-        } catch (e: Exception) {
-            e.printStackTrace()
             emptyList()
         }
     }
