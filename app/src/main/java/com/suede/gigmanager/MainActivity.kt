@@ -257,7 +257,8 @@ class MainActivity : AppCompatActivity() {
         val spinnerItems = mutableListOf("Select a city...")
         
         spinnerItems.addAll(gigs.map { 
-            "${formatDisplayDate(it.date)} - ${it.cityVenue ?: "Unknown"}"
+            val city = it.cityVenue?.trim()?.split(" ")?.firstOrNull() ?: it.cityVenue ?: "Unknown"
+            "${formatDisplayDate(it.date)} - $city"
         })
 
         val adapter = object : ArrayAdapter<String>(
