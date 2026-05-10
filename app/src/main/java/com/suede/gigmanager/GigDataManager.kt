@@ -56,9 +56,15 @@ class GigDataManager(private val context: Context) {
                 val json = file.readText()
                 val type = object : TypeToken<List<Gig>>() {}.type
                 val gigs: List<Gig> = gson.fromJson(json, type)
-                val sorted = gigs.sortedWith(compareBy(nullsLast()) { parseGigDate(it) })
-                if (gigs != sorted) {
-                    // persist the sorted order so future loads reflect it
+                val normalized = gigs.map { gig ->
+                    val parsed = parseGigDate(gig)
+                    if (parsed != null) {
+                        val standard = parsed.format(DateTimeFormatter.ofPattern("d/M/uuuu", Locale.ENGLISH))
+                        if (gig.date != standard) gig.copy(date = standard) else gig
+                    } else gig
+                }
+                val sorted = normalized.sortedWith(compareBy(nullsLast()) { parseGigDate(it) })
+                if (normalized != gigs || normalized != sorted) {
                     saveGigs(sorted)
                 }
                 return sorted
