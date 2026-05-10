@@ -5,6 +5,7 @@ import com.google.gson.annotations.SerializedName
 data class Gig(
     val date: String?,
     val cityVenue: String?,
+    val city: String? = null,
     val ticketsWithMe: String?,
     val whereTicketsAre: String?,
     @SerializedName("location")

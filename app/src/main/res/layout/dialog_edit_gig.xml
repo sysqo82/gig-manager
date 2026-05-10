@@ -47,6 +47,20 @@
             android:layout_height="wrap_content"
             android:hint="e.g., Folkstone Leas Cliff Hall"
             android:padding="12dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="City (for list display):"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <EditText
+            android:id="@+id/editCity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="e.g., Birmingham"
+            android:padding="12dp"
             android:layout_marginBottom="12dp" />
 
         <TextView

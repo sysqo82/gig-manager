@@ -257,7 +257,8 @@ class MainActivity : AppCompatActivity() {
         val spinnerItems = mutableListOf("Select a city...")
         
         spinnerItems.addAll(gigs.map { 
-            "${formatDisplayDate(it.date)} - ${it.cityVenue ?: "Unknown"}"
+            val display = it.city?.ifEmpty { null } ?: it.cityVenue ?: "Unknown"
+            "${formatDisplayDate(it.date)} - $display"
         })
 
         val adapter = object : ArrayAdapter<String>(
@@ -374,6 +375,7 @@ class MainActivity : AppCompatActivity() {
         
         val editDate = dialogView.findViewById<EditText>(R.id.editDate)
         val editCityVenue = dialogView.findViewById<EditText>(R.id.editCityVenue)
+        val editCity = dialogView.findViewById<EditText>(R.id.editCity)
         val spinnerTicketsWithMe = dialogView.findViewById<Spinner>(R.id.spinnerTicketsWithMe)
         val editWhereTickets = dialogView.findViewById<EditText>(R.id.editWhereTickets)
         val editAccommodation = dialogView.findViewById<EditText>(R.id.editAccommodation)
@@ -407,7 +409,8 @@ class MainActivity : AppCompatActivity() {
         gig?.let {
             editDate.setText(it.date ?: "")
             editCityVenue.setText(it.cityVenue ?: "")
-            
+            editCity.setText(it.city ?: "")
+
             val ticketsIndex = yesNoOptions.indexOf(it.ticketsWithMe ?: "")
             if (ticketsIndex >= 0) spinnerTicketsWithMe.setSelection(ticketsIndex)
             
@@ -436,6 +439,7 @@ class MainActivity : AppCompatActivity() {
             val newGig = Gig(
                 date = editDate.text.toString(),
                 cityVenue = editCityVenue.text.toString(),
+                city = editCity.text.toString().trim().ifEmpty { null },
                 ticketsWithMe = spinnerTicketsWithMe.selectedItem.toString(),
                 whereTicketsAre = editWhereTickets.text.toString(),
                 accommodation = editAccommodation.text.toString(),
