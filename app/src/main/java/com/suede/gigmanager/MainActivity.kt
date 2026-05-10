@@ -180,6 +180,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        loadGigsData()
+        supportActionBar?.title = dataManager.getCurrentTourName()
+        invalidateOptionsMenu()
+        updateSpinner()
+        selectedGigIndex = -1
+        detailsContainer.visibility = View.GONE
+        actionButtonsContainer.visibility = View.GONE
+    }
+
     private fun loadGigsData() {
         gigs = dataManager.loadGigs().toMutableList()
     }
