@@ -2,6 +2,8 @@ package com.suede.gigmanager
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -9,6 +11,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 
 class AccountActivity : AppCompatActivity() {
@@ -67,6 +70,7 @@ class AccountActivity : AppCompatActivity() {
         btnSubmit.setOnClickListener { onSubmit() }
         btnSyncNow.setOnClickListener { onSyncNow() }
         btnSignOut.setOnClickListener { onSignOut() }
+        switchMode(register = false) // set initial visual state
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -88,15 +92,26 @@ class AccountActivity : AppCompatActivity() {
     private fun switchMode(register: Boolean) {
         isRegisterMode = register
         tvError.visibility = View.GONE
-        if (register) {
-            btnTabRegister.isEnabled = false
-            btnTabLogin.isEnabled = true
-            btnSubmit.text = "Register"
-        } else {
-            btnTabLogin.isEnabled = false
-            btnTabRegister.isEnabled = true
-            btnSubmit.text = "Sign In"
-        }
+        val active = if (register) btnTabRegister else btnTabLogin
+        val inactive = if (register) btnTabLogin else btnTabRegister
+        setTabActive(active as MaterialButton)
+        setTabInactive(inactive as MaterialButton)
+        btnSubmit.text = if (register) "Register" else "Sign In"
+    }
+
+    private fun setTabActive(btn: MaterialButton) {
+        val primary = getColor(R.color.purple_500)
+        btn.backgroundTintList = ColorStateList.valueOf(primary)
+        btn.setTextColor(Color.WHITE)
+        btn.strokeWidth = 0
+    }
+
+    private fun setTabInactive(btn: MaterialButton) {
+        val primary = getColor(R.color.purple_500)
+        btn.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
+        btn.setTextColor(primary)
+        btn.strokeWidth = (2 * resources.displayMetrics.density).toInt()
+        btn.strokeColor = ColorStateList.valueOf(primary)
     }
 
     private fun onSubmit() {
