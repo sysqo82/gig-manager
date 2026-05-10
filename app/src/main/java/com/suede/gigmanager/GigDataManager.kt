@@ -1,6 +1,7 @@
 package com.suede.gigmanager
 
 import android.content.Context
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
@@ -108,8 +109,14 @@ class GigDataManager(private val context: Context) {
         if (!syncService.isLoggedIn()) return
         Thread {
             try {
-                syncService.push(getCurrentTourName(), gigs, loadArchives())
-            } catch (_: Exception) { /* silent – sync will retry next save */ }
+                val result = syncService.push(getCurrentTourName(), gigs, loadArchives())
+                when (result) {
+                    is ApiResult.Success -> Log.d("GigSync", "Auto-sync OK: ${result.data}")
+                    is ApiResult.Error -> Log.e("GigSync", "Auto-sync failed: ${result.message}")
+                }
+            } catch (e: Exception) {
+                Log.e("GigSync", "Auto-sync exception", e)
+            }
         }.start()
     }
 

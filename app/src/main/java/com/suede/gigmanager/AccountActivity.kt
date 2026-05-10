@@ -5,11 +5,13 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
@@ -152,12 +154,20 @@ class AccountActivity : AppCompatActivity() {
             val tourName = dataManager.getCurrentTourName()
             val gigs = dataManager.loadGigs()
             val archives = dataManager.loadArchives()
+            Log.d("GigSync", "Manual sync: tourName=$tourName gigs=${gigs.size} archives=${archives.size}")
             val result = syncService.push(tourName, gigs, archives)
             runOnUiThread {
                 setLoading(false)
                 when (result) {
                     is ApiResult.Success -> Toast.makeText(this, "Synced successfully", Toast.LENGTH_SHORT).show()
-                    is ApiResult.Error -> Toast.makeText(this, "Sync failed: ${result.message}", Toast.LENGTH_LONG).show()
+                    is ApiResult.Error -> {
+                        Log.e("GigSync", "Manual sync failed: ${result.message}")
+                        AlertDialog.Builder(this)
+                            .setTitle("Sync Failed")
+                            .setMessage(result.message)
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
                 }
             }
         }.start()
