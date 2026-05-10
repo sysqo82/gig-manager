@@ -429,6 +429,20 @@ class MainActivity : AppCompatActivity() {
             .setView(dialogView)
             .create()
 
+        dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+
+        editAccomDates.setOnClickListener {
+            val cal = Calendar.getInstance()
+            DatePickerDialog(this, { _, y1, m1, d1 ->
+                val checkIn = String.format("%d/%d/%d", d1, m1 + 1, y1)
+                DatePickerDialog(this, { _, y2, m2, d2 ->
+                    val checkOut = String.format("%d/%d/%d", d2, m2 + 1, y2)
+                    editAccomDates.setText("$checkIn – $checkOut")
+                }, y1, m1, d1).also { it.setTitle("Check-out date") }.show()
+            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
+                .also { it.setTitle("Check-in date") }.show()
+        }
+
         dialogView.findViewById<Button>(R.id.btnCancel).setOnClickListener {
             dialog.dismiss()
         }

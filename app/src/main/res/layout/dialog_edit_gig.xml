@@ -115,8 +115,10 @@
             android:id="@+id/editAccomDates"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="e.g., 30-31 January"
+            android:hint="Tap to select check-in / check-out"
             android:padding="12dp"
+            android:focusable="false"
+            android:clickable="true"
             android:layout_marginBottom="12dp" />
 
         <TextView
