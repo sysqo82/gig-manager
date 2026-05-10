@@ -110,8 +110,7 @@ class AccountActivity : AppCompatActivity() {
         val primary = getColor(R.color.purple_500)
         btn.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
         btn.setTextColor(primary)
-        btn.strokeWidth = (2 * resources.displayMetrics.density).toInt()
-        btn.strokeColor = ColorStateList.valueOf(primary)
+        btn.strokeWidth = 0
     }
 
     private fun onSubmit() {
