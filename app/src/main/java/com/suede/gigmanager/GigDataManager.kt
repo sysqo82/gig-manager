@@ -102,19 +102,9 @@ class GigDataManager(private val context: Context) {
 
     fun addGig(gig: Gig): Boolean {
         val gigs = loadGigs().toMutableList()
-        // Insert in sorted order by parsed date
-        val insertIndex = gigs.indexOfFirst { existing ->
-            val ed = parseGigDate(existing)
-            val nd = parseGigDate(gig)
-            when {
-                ed == null && nd == null -> false
-                ed == null -> true
-                nd == null -> false
-                else -> nd.isBefore(ed)
-            }
-        }
-        if (insertIndex == -1) gigs.add(gig) else gigs.add(insertIndex, gig)
-        return saveGigs(gigs)
+        gigs.add(gig)
+        val sorted = gigs.sortedWith(compareBy(nullsLast()) { parseGigDate(it) })
+        return saveGigs(sorted)
     }
 
     fun updateGig(index: Int, gig: Gig): Boolean {
