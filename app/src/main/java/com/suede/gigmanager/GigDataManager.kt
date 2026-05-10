@@ -59,7 +59,7 @@ class GigDataManager(private val context: Context) {
                 val normalized = gigs.map { gig ->
                     val parsed = parseGigDate(gig)
                     if (parsed != null) {
-                        val standard = parsed.format(DateTimeFormatter.ofPattern("d/M/uuuu", Locale.ENGLISH))
+                        val standard = parsed.format(DateTimeFormatter.ofPattern("EEEE, d/M/uuuu", Locale.ENGLISH))
                         if (gig.date != standard) gig.copy(date = standard) else gig
                     } else gig
                 }
