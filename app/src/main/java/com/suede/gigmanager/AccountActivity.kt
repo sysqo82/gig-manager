@@ -224,8 +224,8 @@ class AccountActivity : AppCompatActivity() {
 
     private fun onSignOut() {
         syncService.clearCredentials()
-        refreshUi()
-        Toast.makeText(this, "Signed out", Toast.LENGTH_SHORT).show()
+        startActivity(android.content.Intent(this, LoginActivity::class.java)
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK))
     }
 
     private fun setLoading(loading: Boolean) {
