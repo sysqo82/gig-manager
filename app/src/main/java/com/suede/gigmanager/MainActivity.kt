@@ -81,13 +81,20 @@ class MainActivity : AppCompatActivity() {
         }
         setContentView(R.layout.activity_main)
 
-        // Set up toolbar
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
-
         // Initialize data manager
         dataManager = GigDataManager(this)
         syncService = GigSyncService(this)
+
+        // If not logged in, send back to login
+        if (!syncService.isLoggedIn()) {
+            startActivity(android.content.Intent(this, LoginActivity::class.java))
+            finish()
+            return
+        }
+
+        // Set up toolbar
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
         // Initialize views
         initializeViews()
