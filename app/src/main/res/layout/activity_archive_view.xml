@@ -2,7 +2,6 @@
 <androidx.drawerlayout.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
@@ -13,14 +12,14 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            android:elevation="4dp"
-            app:titleTextColor="#FFFFFF"
-            app:subtitleTextColor="#CCCCCC" />
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        app:titleTextColor="#FFFFFF"
+        app:subtitleTextColor="#CCCCCC" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -35,49 +34,18 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Title -->
-        <TextView
-            android:id="@+id/titleText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Tour Manager"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="#000000"
-            android:gravity="center"
-            android:paddingBottom="4dp" />
-
-        <!-- Add New Gig Button -->
-        <Button
-            android:id="@+id/btnAddGig"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="+ Add New Gig"
-            android:textSize="16sp"
-            android:layout_marginBottom="8dp" />
-
-        <!-- Archive Tour Button -->
-        <Button
-            android:id="@+id/btnArchiveTour"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Archive Tour &amp; Start New"
-            android:textSize="16sp"
-            android:backgroundTint="#FF8F00"
-            android:layout_marginBottom="16dp" />
-
-        <!-- Venue Dropdown -->
+        <!-- Gig selector -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Select City:"
+            android:text="Select Gig:"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="#000000"
             android:paddingBottom="8dp" />
 
         <Spinner
-            android:id="@+id/venueSpinner"
+            android:id="@+id/archiveGigSpinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="48dp"
@@ -92,51 +60,26 @@
             android:layout_marginTop="16dp"
             android:layout_marginBottom="16dp" />
 
-        <!-- Action Buttons -->
+        <!-- Gig details (read-only) -->
         <LinearLayout
-            android:id="@+id/actionButtonsContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:visibility="gone"
-            android:layout_marginBottom="16dp">
-
-            <Button
-                android:id="@+id/btnEditGig"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Edit"
-                android:layout_marginEnd="8dp" />
-
-            <Button
-                android:id="@+id/btnDeleteGig"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Delete"
-                android:backgroundTint="#D32F2F"
-                android:layout_marginStart="8dp" />
-
-        </LinearLayout>
-
-        <!-- Gig Details Container -->
-        <LinearLayout
-            android:id="@+id/detailsContainer"
+            android:id="@+id/archiveDetailsContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="gone">
 
-            <!-- Mark as complete checkbox -->
-            <CheckBox
-                android:id="@+id/checkComplete"
+            <!-- Completed badge -->
+            <TextView
+                android:id="@+id/archiveCompleteBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Mark as complete"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:paddingBottom="8dp" />
+                android:text="✓ Completed"
+                android:textSize="14sp"
+                android:textColor="#FFFFFF"
+                android:background="#4CAF50"
+                android:padding="8dp"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone" />
 
             <!-- Date -->
             <TextView
@@ -148,14 +91,14 @@
                 android:textColor="#555555"
                 android:paddingTop="8dp" />
             <TextView
-                android:id="@+id/dateText"
+                android:id="@+id/archiveGigDateText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
                 android:textColor="#000000"
                 android:paddingBottom="12dp" />
 
-            <!-- City &amp; Venue -->
+            <!-- City & Venue -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -165,15 +108,12 @@
                 android:textColor="#555555"
                 android:paddingTop="8dp" />
             <TextView
-                android:id="@+id/cityVenueText"
+                android:id="@+id/archiveCityVenueText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
-                android:textColor="#0000EE"
-                android:paddingBottom="12dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true" />
+                android:textColor="#000000"
+                android:paddingBottom="12dp" />
 
             <!-- Tickets With Me -->
             <TextView
@@ -185,7 +125,7 @@
                 android:textColor="#555555"
                 android:paddingTop="8dp" />
             <TextView
-                android:id="@+id/ticketsWithMeText"
+                android:id="@+id/archiveTicketsWithMeText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
@@ -202,7 +142,7 @@
                 android:textColor="#555555"
                 android:paddingTop="8dp" />
             <TextView
-                android:id="@+id/whereTicketsText"
+                android:id="@+id/archiveWhereTicketsText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
@@ -219,17 +159,14 @@
                 android:textColor="#555555"
                 android:paddingTop="8dp" />
             <TextView
-                android:id="@+id/accommodationText"
+                android:id="@+id/archiveAccommodationText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
-                android:textColor="#0000EE"
-                android:paddingBottom="12dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true" />
+                android:textColor="#000000"
+                android:paddingBottom="12dp" />
 
-            <!-- Where the accommodation is booked -->
+            <!-- Where Accommodation Booked -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -239,7 +176,7 @@
                 android:textColor="#555555"
                 android:paddingTop="8dp" />
             <TextView
-                android:id="@+id/whereAccomBoughtText"
+                android:id="@+id/archiveWhereAccomBoughtText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
@@ -256,7 +193,7 @@
                 android:textColor="#555555"
                 android:paddingTop="8dp" />
             <TextView
-                android:id="@+id/accomDatesText"
+                android:id="@+id/archiveAccomDatesText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
@@ -273,7 +210,7 @@
                 android:textColor="#555555"
                 android:paddingTop="8dp" />
             <TextView
-                android:id="@+id/costText"
+                android:id="@+id/archiveCostText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
@@ -290,7 +227,7 @@
                 android:textColor="#555555"
                 android:paddingTop="8dp" />
             <TextView
-                android:id="@+id/paidText"
+                android:id="@+id/archivePaidText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
@@ -307,7 +244,7 @@
                 android:textColor="#555555"
                 android:paddingTop="8dp" />
             <TextView
-                android:id="@+id/accomCommentsText"
+                android:id="@+id/archiveAccomCommentsText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
@@ -324,7 +261,7 @@
                 android:textColor="#555555"
                 android:paddingTop="8dp" />
             <TextView
-                android:id="@+id/travelDetailsText"
+                android:id="@+id/archiveTravelDetailsText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
@@ -336,52 +273,6 @@
     </LinearLayout>
 
     </ScrollView>
-
-    </LinearLayout>
-
-    <!-- Right-side archives drawer -->
-    <LinearLayout
-        android:id="@+id/archivesDrawer"
-        android:layout_width="280dp"
-        android:layout_height="match_parent"
-        android:layout_gravity="end"
-        android:orientation="vertical"
-        android:background="#FAFAFA"
-        android:fitsSystemWindows="true">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Previous Tours"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:background="#546E7A"
-            android:padding="16dp" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#CCCCCC" />
-
-        <ListView
-            android:id="@+id/archiveDrawerList"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:divider="#E0E0E0"
-            android:dividerHeight="1dp" />
-
-        <TextView
-            android:id="@+id/archivesEmptyText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="No archived tours yet."
-            android:textSize="14sp"
-            android:textColor="#888888"
-            android:gravity="center"
-            android:padding="24dp"
-            android:visibility="gone" />
 
     </LinearLayout>
 

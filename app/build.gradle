@@ -11,8 +11,8 @@ android {
         applicationId "com.suede.gigmanager"
         minSdk 24
         targetSdk 36
-        versionCode 9
-        versionName "1.9"
+        versionCode 14
+        versionName "2.4"
     }
 
     buildTypes {
@@ -31,6 +31,7 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
+        coreLibraryDesugaringEnabled true
     }
     
     kotlinOptions {
@@ -53,4 +54,5 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
     implementation 'com.google.code.gson:gson:2.12.1'
     implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 }

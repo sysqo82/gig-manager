@@ -394,6 +394,21 @@ class MainActivity : AppCompatActivity() {
 
         editDate.setOnClickListener {
             val calendar = Calendar.getInstance()
+            val existingDate = editDate.text.toString().trim()
+            if (existingDate.isNotEmpty()) {
+                val tryFormats = listOf(
+                    SimpleDateFormat("EEEE, d/M/yyyy", Locale.ENGLISH),
+                    SimpleDateFormat("d/M/yyyy", Locale.ENGLISH),
+                    SimpleDateFormat("EEEE, d MMMM yyyy", Locale.ENGLISH),
+                    SimpleDateFormat("d MMMM yyyy", Locale.ENGLISH)
+                )
+                for (fmt in tryFormats) {
+                    try {
+                        val parsed = fmt.parse(existingDate)
+                        if (parsed != null) { calendar.time = parsed; break }
+                    } catch (_: Exception) { }
+                }
+            }
             val year = calendar.get(Calendar.YEAR)
             val month = calendar.get(Calendar.MONTH)
             val day = calendar.get(Calendar.DAY_OF_MONTH)
@@ -481,13 +496,14 @@ class MainActivity : AppCompatActivity() {
                 updateSpinner()
                 
                 if (index >= 0) {
-                        // After updating, the list may have been re-sorted. Find the actual index.
-                        val updatedIndex = gigs.indexOfFirst { it == newGig }.takeIf { it >= 0 } ?: 0
+                        // After updating, the list may have been re-sorted. Find by cityVenue
+                        // because the date gets normalised on load and won't match newGig exactly.
+                        val updatedIndex = gigs.indexOfFirst { it.cityVenue == newGig.cityVenue }.takeIf { it >= 0 } ?: 0
                         venueSpinner.setSelection(updatedIndex + 1)
                         Toast.makeText(this, "Gig updated", Toast.LENGTH_SHORT).show()
                 } else {
                         // After adding, the new gig may not be the last item due to sorting.
-                        val addedIndex = gigs.indexOfFirst { it == newGig }.takeIf { it >= 0 } ?: (gigs.size - 1)
+                        val addedIndex = gigs.indexOfFirst { it.cityVenue == newGig.cityVenue }.takeIf { it >= 0 } ?: (gigs.size - 1)
                         venueSpinner.setSelection(addedIndex + 1)
                         Toast.makeText(this, "Gig added", Toast.LENGTH_SHORT).show()
                 }

@@ -7,7 +7,8 @@ import com.google.gson.reflect.TypeToken
 import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 
 data class TourArchive(
@@ -59,7 +60,10 @@ class GigDataManager(private val context: Context) {
                 val normalized = gigs.map { gig ->
                     val parsed = parseGigDate(gig)
                     if (parsed != null) {
-                        val standard = parsed.format(DateTimeFormatter.ofPattern("EEEE, d/M/uuuu", Locale.ENGLISH))
+                        val cal = Calendar.getInstance()
+                        cal.set(parsed.year, parsed.monthValue - 1, parsed.dayOfMonth)
+                        val dayName = SimpleDateFormat("EEEE", Locale.ENGLISH).format(cal.time)
+                        val standard = "$dayName, ${parsed.dayOfMonth}/${parsed.monthValue}/${parsed.year}"
                         if (gig.date != standard) gig.copy(date = standard) else gig
                     } else gig
                 }
@@ -127,22 +131,25 @@ class GigDataManager(private val context: Context) {
     private fun parseGigDate(gig: Gig): LocalDate? {
         val raw = gig.date ?: return null
         val trimmed = raw.trim()
-        // Try formats: with weekday, without, and numeric slash formats (e.g. 7/2/2026)
         val formats = listOf(
-            "EEEE, d MMMM uuuu",
-            "d MMMM uuuu",
-            "EEEE, d/M/uuuu",
-            "d/M/uuuu",
+            "EEEE, d MMMM yyyy",
+            "d MMMM yyyy",
             "EEEE, d/M/yyyy",
             "d/M/yyyy"
         )
         for (fmt in formats) {
             try {
-                val formatter = DateTimeFormatter.ofPattern(fmt, Locale.ENGLISH)
-                return LocalDate.parse(trimmed, formatter)
-            } catch (e: DateTimeParseException) {
-                // try next
-            }
+                val sdf = SimpleDateFormat(fmt, Locale.ENGLISH)
+                sdf.isLenient = true
+                val date = sdf.parse(trimmed) ?: continue
+                val cal = Calendar.getInstance()
+                cal.time = date
+                return LocalDate.of(
+                    cal.get(Calendar.YEAR),
+                    cal.get(Calendar.MONTH) + 1,
+                    cal.get(Calendar.DAY_OF_MONTH)
+                )
+            } catch (_: Exception) { }
         }
         return null
     }
@@ -205,8 +212,9 @@ class GigDataManager(private val context: Context) {
      */
     fun saveGigsQuiet(gigs: List<Gig>): Boolean {
         return try {
+            val sorted = gigs.sortedWith(compareBy(nullsLast()) { parseGigDate(it) })
             val file = File(context.filesDir, fileName)
-            file.writeText(gson.toJson(gigs))
+            file.writeText(gson.toJson(sorted))
             true
         } catch (e: Exception) {
             e.printStackTrace()
