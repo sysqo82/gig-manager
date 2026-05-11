@@ -1,0 +1,244 @@
+package com.suede.gigmanager
+
+import android.content.Context
+import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.os.Bundle
+import android.util.Log
+import android.view.View
+import android.widget.Button
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.textfield.TextInputEditText
+
+class AccountActivity : AppCompatActivity() {
+
+    private lateinit var syncService: GigSyncService
+    private lateinit var dataManager: GigDataManager
+
+    private lateinit var layoutLoggedIn: View
+    private lateinit var layoutLoggedOut: View
+    private lateinit var tvLoggedInAs: TextView
+    private lateinit var btnSyncNow: Button
+    private lateinit var btnRestore: Button
+    private lateinit var btnSignOut: Button
+    private lateinit var btnTabLogin: Button
+    private lateinit var btnTabRegister: Button
+    private lateinit var etEmail: TextInputEditText
+    private lateinit var etPassword: TextInputEditText
+    private lateinit var btnSubmit: Button
+    private lateinit var progressBar: ProgressBar
+    private lateinit var tvError: TextView
+
+    private var isRegisterMode = false
+
+    companion object {
+        fun start(context: Context) {
+            context.startActivity(Intent(context, AccountActivity::class.java))
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_account)
+
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = "Sync Account"
+
+        syncService = GigSyncService(this)
+        dataManager = GigDataManager(this)
+
+        layoutLoggedIn = findViewById(R.id.layoutLoggedIn)
+        layoutLoggedOut = findViewById(R.id.layoutLoggedOut)
+        tvLoggedInAs = findViewById(R.id.tvLoggedInAs)
+        btnSyncNow = findViewById(R.id.btnSyncNow)
+        btnRestore = findViewById(R.id.btnRestore)
+        btnSignOut = findViewById(R.id.btnSignOut)
+        btnTabLogin = findViewById(R.id.btnTabLogin)
+        btnTabRegister = findViewById(R.id.btnTabRegister)
+        etEmail = findViewById(R.id.etEmail)
+        etPassword = findViewById(R.id.etPassword)
+        btnSubmit = findViewById(R.id.btnSubmit)
+        progressBar = findViewById(R.id.progressBar)
+        tvError = findViewById(R.id.tvError)
+
+        refreshUi()
+
+        btnTabLogin.setOnClickListener { switchMode(register = false) }
+        btnTabRegister.setOnClickListener { switchMode(register = true) }
+        btnSubmit.setOnClickListener { onSubmit() }
+        btnSyncNow.setOnClickListener { onSyncNow() }
+        btnRestore.setOnClickListener { onRestore() }
+        btnSignOut.setOnClickListener { onSignOut() }
+        switchMode(register = false) // set initial visual state
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressedDispatcher.onBackPressed()
+        return true
+    }
+
+    private fun refreshUi() {
+        if (syncService.isLoggedIn()) {
+            layoutLoggedIn.visibility = View.VISIBLE
+            layoutLoggedOut.visibility = View.GONE
+            tvLoggedInAs.text = "Logged in as:\n${syncService.getEmail()}"
+        } else {
+            layoutLoggedIn.visibility = View.GONE
+            layoutLoggedOut.visibility = View.VISIBLE
+        }
+    }
+
+    private fun switchMode(register: Boolean) {
+        isRegisterMode = register
+        tvError.visibility = View.GONE
+        val active = if (register) btnTabRegister else btnTabLogin
+        val inactive = if (register) btnTabLogin else btnTabRegister
+        setTabActive(active as MaterialButton)
+        setTabInactive(inactive as MaterialButton)
+        btnSubmit.text = if (register) "Register" else "Sign In"
+    }
+
+    private fun setTabActive(btn: MaterialButton) {
+        val primary = getColor(R.color.purple_500)
+        btn.backgroundTintList = ColorStateList.valueOf(primary)
+        btn.setTextColor(Color.WHITE)
+        btn.strokeWidth = 0
+    }
+
+    private fun setTabInactive(btn: MaterialButton) {
+        val primary = getColor(R.color.purple_500)
+        btn.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
+        btn.setTextColor(primary)
+        btn.strokeWidth = 0
+    }
+
+    private fun onSubmit() {
+        val email = etEmail.text?.toString()?.trim() ?: ""
+        val password = etPassword.text?.toString() ?: ""
+
+        if (email.isEmpty() || password.isEmpty()) {
+            showError("Please enter email and password")
+            return
+        }
+        if (isRegisterMode && password.length < 8) {
+            showError("Password must be at least 8 characters")
+            return
+        }
+
+        setLoading(true)
+        Thread {
+            val result = if (isRegisterMode) {
+                syncService.register(email, password)
+            } else {
+                syncService.login(email, password)
+            }
+            runOnUiThread {
+                setLoading(false)
+                when (result) {
+                    is ApiResult.Success -> {
+                        refreshUi()
+                        Toast.makeText(this, if (isRegisterMode) "Account created" else "Signed in", Toast.LENGTH_SHORT).show()
+                    }
+                    is ApiResult.Error -> showError(result.message)
+                }
+            }
+        }.start()
+    }
+
+    private fun onSyncNow() {
+        setLoading(true)
+        Thread {
+            val tourName = dataManager.getCurrentTourName()
+            val gigs = dataManager.loadGigs()
+            val archives = dataManager.loadArchives()
+            Log.d("GigSync", "Manual sync: tourName=$tourName gigs=${gigs.size} archives=${archives.size}")
+            val result = syncService.push(tourName, gigs, archives)
+            runOnUiThread {
+                setLoading(false)
+                when (result) {
+                    is ApiResult.Success -> Toast.makeText(this, "Synced successfully", Toast.LENGTH_SHORT).show()
+                    is ApiResult.Error -> {
+                        Log.e("GigSync", "Manual sync failed: ${result.message}")
+                        AlertDialog.Builder(this)
+                            .setTitle("Sync Failed")
+                            .setMessage(result.message)
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                }
+            }
+        }.start()
+    }
+
+    private fun onRestore() {
+        val progress = AlertDialog.Builder(this)
+            .setMessage("Checking server…")
+            .setCancelable(false)
+            .create()
+        progress.show()
+
+        Thread {
+            val result = syncService.pull()
+            runOnUiThread {
+                progress.dismiss()
+                when (result) {
+                    is ApiResult.Error -> AlertDialog.Builder(this)
+                        .setTitle("Restore Failed")
+                        .setMessage(result.message)
+                        .setPositiveButton("OK", null)
+                        .show()
+                    is ApiResult.Success -> {
+                        val data = result.data
+                        val gigCount = data.gigs.size
+                        val archiveCount = data.archives.size
+                        AlertDialog.Builder(this)
+                            .setTitle("Restore from Server")
+                            .setMessage(
+                                "Server copy:\n" +
+                                "• Tour: ${data.tourName.ifEmpty { "(unnamed)" }}\n" +
+                                "• $gigCount gig${if (gigCount != 1) "s" else ""}, $archiveCount archive${if (archiveCount != 1) "s" else ""}\n" +
+                                (if (data.lastSyncedAt != null) "• Last synced: ${data.lastSyncedAt}\n" else "") +
+                                "\nYour current local data will be replaced. " +
+                                "A local backup will be saved first so nothing is permanently lost."
+                            )
+                            .setPositiveButton("Restore") { _, _ ->
+                                dataManager.savePreRestoreBackup()
+                                dataManager.restoreArchives(data.archives)
+                                dataManager.saveGigsQuiet(data.gigs)
+                                dataManager.setCurrentTourName(data.tourName.ifEmpty { "Restored Tour" })
+                                Toast.makeText(this, "Data restored from server", Toast.LENGTH_LONG).show()
+                            }
+                            .setNegativeButton("Cancel", null)
+                            .show()
+                    }
+                }
+            }
+        }.start()
+    }
+
+    private fun onSignOut() {
+        syncService.clearCredentials()
+        refreshUi()
+        Toast.makeText(this, "Signed out", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun setLoading(loading: Boolean) {
+        progressBar.visibility = if (loading) View.VISIBLE else View.GONE
+        btnSubmit.isEnabled = !loading
+        btnSyncNow.isEnabled = !loading
+        btnRestore.isEnabled = !loading
+        btnSignOut.isEnabled = !loading
+        tvError.visibility = View.GONE
+    }
+
+    private fun showError(msg: String) {
+        tvError.text = msg
+        tvError.visibility = View.VISIBLE
+    }
+}

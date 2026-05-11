@@ -1,17 +1,21 @@
 package com.suede.gigmanager
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Paint
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
@@ -20,10 +24,15 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ListView
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -37,6 +46,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnAddGig: Button
     private lateinit var btnEditGig: Button
     private lateinit var btnDeleteGig: Button
+    private lateinit var btnArchiveTour: Button
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var archiveDrawerList: ListView
+    private lateinit var archivesEmptyText: TextView
     
     private lateinit var checkComplete: CheckBox
     private lateinit var dateText: TextView
@@ -52,21 +65,38 @@ class MainActivity : AppCompatActivity() {
     private lateinit var travelDetailsText: TextView
 
     private lateinit var dataManager: GigDataManager
+    private lateinit var syncService: GigSyncService
     private var gigs: MutableList<Gig> = mutableListOf()
     private var selectedGigIndex: Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
         super.onCreate(savedInstanceState)
+        window.statusBarColor = ContextCompat.getColor(this, R.color.purple_700)
+        @Suppress("DEPRECATION")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            window.decorView.systemUiVisibility =
+                window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
+        }
         setContentView(R.layout.activity_main)
+
+        // Set up toolbar
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
         // Initialize data manager
         dataManager = GigDataManager(this)
+        syncService = GigSyncService(this)
 
         // Initialize views
         initializeViews()
 
         // Load gigs data
         loadGigsData()
+
+        // Display current tour name
+        supportActionBar?.title = dataManager.getCurrentTourName()
 
         // Setup spinner
         setupVenueSpinner()
@@ -82,6 +112,10 @@ class MainActivity : AppCompatActivity() {
         btnAddGig = findViewById(R.id.btnAddGig)
         btnEditGig = findViewById(R.id.btnEditGig)
         btnDeleteGig = findViewById(R.id.btnDeleteGig)
+        btnArchiveTour = findViewById(R.id.btnArchiveTour)
+        drawerLayout = findViewById(R.id.drawerLayout)
+        archiveDrawerList = findViewById(R.id.archiveDrawerList)
+        archivesEmptyText = findViewById(R.id.archivesEmptyText)
         
         checkComplete = findViewById(R.id.checkComplete)
         dateText = findViewById(R.id.dateText)
@@ -144,6 +178,17 @@ class MainActivity : AppCompatActivity() {
             val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(address)}"))
             startActivity(webIntent)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadGigsData()
+        supportActionBar?.title = dataManager.getCurrentTourName()
+        invalidateOptionsMenu()
+        updateSpinner()
+        selectedGigIndex = -1
+        detailsContainer.visibility = View.GONE
+        actionButtonsContainer.visibility = View.GONE
     }
 
     private fun loadGigsData() {
@@ -212,7 +257,7 @@ class MainActivity : AppCompatActivity() {
         val spinnerItems = mutableListOf("Select a city...")
         
         spinnerItems.addAll(gigs.map { 
-            val city = it.cityVenue?.split(" ")?.firstOrNull() ?: it.cityVenue ?: "Unknown"
+            val city = it.cityVenue?.trim()?.split(" ")?.firstOrNull() ?: it.cityVenue ?: "Unknown"
             "${formatDisplayDate(it.date)} - $city"
         })
 
@@ -257,8 +302,74 @@ class MainActivity : AppCompatActivity() {
                 showDeleteConfirmation()
             }
         }
+
+        btnArchiveTour.setOnClickListener {
+            showArchiveTourDialog()
+        }
     }
 
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        menu.findItem(R.id.action_sync_account)?.title =
+            if (syncService.isLoggedIn()) "Sync Account" else "Login / Register"
+        return super.onPrepareOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.action_archives) {
+            openArchivesDrawer()
+            return true
+        }
+        if (item.itemId == R.id.action_sync_account) {
+            AccountActivity.start(this)
+            return true
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun openArchivesDrawer() {
+        val archives = dataManager.loadArchives()
+        if (archives.isEmpty()) {
+            archivesEmptyText.visibility = View.VISIBLE
+            archiveDrawerList.visibility = View.GONE
+        } else {
+            archivesEmptyText.visibility = View.GONE
+            archiveDrawerList.visibility = View.VISIBLE
+            val items = archives.map { archive ->
+                val dateRange = run {
+                    val formats = listOf(
+                        SimpleDateFormat("EEEE, d MMMM yyyy", Locale.ENGLISH),
+                        SimpleDateFormat("d MMMM yyyy", Locale.ENGLISH),
+                        SimpleDateFormat("EEEE, d/M/yyyy", Locale.ENGLISH),
+                        SimpleDateFormat("d/M/yyyy", Locale.ENGLISH)
+                    )
+                    val short = SimpleDateFormat("d/M/yyyy", Locale.ENGLISH)
+                    fun parseDate(s: String): java.util.Date? {
+                        for (fmt in formats) { try { return fmt.parse(s) } catch (e: Exception) { } }
+                        return null
+                    }
+                    val dates = archive.gigs.mapNotNull { parseDate(it.date ?: "") }
+                    if (dates.isEmpty()) archive.archivedDate
+                    else "${short.format(dates.min())} – ${short.format(dates.max())}"
+                }
+                "${archive.tourName}\n$dateRange · ${archive.gigs.size} gig${if (archive.gigs.size != 1) "s" else ""}"
+            }
+            val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_2,
+                android.R.id.text1, items)
+            archiveDrawerList.adapter = adapter
+            archiveDrawerList.setOnItemClickListener { _, _, position, _ ->
+                drawerLayout.closeDrawer(GravityCompat.END)
+                ArchiveViewActivity.start(this, archives[position])
+            }
+        }
+        drawerLayout.openDrawer(GravityCompat.END)
+    }
+
+    @SuppressLint("DefaultLocale")
     private fun showEditDialog(gig: Gig?, index: Int) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_gig, null)
         
@@ -283,6 +394,21 @@ class MainActivity : AppCompatActivity() {
 
         editDate.setOnClickListener {
             val calendar = Calendar.getInstance()
+            val existingDate = editDate.text.toString().trim()
+            if (existingDate.isNotEmpty()) {
+                val tryFormats = listOf(
+                    SimpleDateFormat("EEEE, d/M/yyyy", Locale.ENGLISH),
+                    SimpleDateFormat("d/M/yyyy", Locale.ENGLISH),
+                    SimpleDateFormat("EEEE, d MMMM yyyy", Locale.ENGLISH),
+                    SimpleDateFormat("d MMMM yyyy", Locale.ENGLISH)
+                )
+                for (fmt in tryFormats) {
+                    try {
+                        val parsed = fmt.parse(existingDate)
+                        if (parsed != null) { calendar.time = parsed; break }
+                    } catch (_: Exception) { }
+                }
+            }
             val year = calendar.get(Calendar.YEAR)
             val month = calendar.get(Calendar.MONTH)
             val day = calendar.get(Calendar.DAY_OF_MONTH)
@@ -297,7 +423,7 @@ class MainActivity : AppCompatActivity() {
         gig?.let {
             editDate.setText(it.date ?: "")
             editCityVenue.setText(it.cityVenue ?: "")
-            
+
             val ticketsIndex = yesNoOptions.indexOf(it.ticketsWithMe ?: "")
             if (ticketsIndex >= 0) spinnerTicketsWithMe.setSelection(ticketsIndex)
             
@@ -317,6 +443,20 @@ class MainActivity : AppCompatActivity() {
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
             .create()
+
+        dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+
+        editAccomDates.setOnClickListener {
+            val cal = Calendar.getInstance()
+            DatePickerDialog(this, { _, y1, m1, d1 ->
+                val checkIn = String.format("%d/%d/%d", d1, m1 + 1, y1)
+                DatePickerDialog(this, { _, y2, m2, d2 ->
+                    val checkOut = String.format("%d/%d/%d", d2, m2 + 1, y2)
+                    editAccomDates.setText("$checkIn – $checkOut")
+                }, y1, m1, d1).also { it.setTitle("Check-out date") }.show()
+            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
+                .also { it.setTitle("Check-in date") }.show()
+        }
 
         dialogView.findViewById<Button>(R.id.btnCancel).setOnClickListener {
             dialog.dismiss()
@@ -356,13 +496,14 @@ class MainActivity : AppCompatActivity() {
                 updateSpinner()
                 
                 if (index >= 0) {
-                        // After updating, the list may have been re-sorted. Find the actual index.
-                        val updatedIndex = gigs.indexOfFirst { it == newGig }.takeIf { it >= 0 } ?: 0
+                        // After updating, the list may have been re-sorted. Find by cityVenue
+                        // because the date gets normalised on load and won't match newGig exactly.
+                        val updatedIndex = gigs.indexOfFirst { it.cityVenue == newGig.cityVenue }.takeIf { it >= 0 } ?: 0
                         venueSpinner.setSelection(updatedIndex + 1)
                         Toast.makeText(this, "Gig updated", Toast.LENGTH_SHORT).show()
                 } else {
                         // After adding, the new gig may not be the last item due to sorting.
-                        val addedIndex = gigs.indexOfFirst { it == newGig }.takeIf { it >= 0 } ?: (gigs.size - 1)
+                        val addedIndex = gigs.indexOfFirst { it.cityVenue == newGig.cityVenue }.takeIf { it >= 0 } ?: (gigs.size - 1)
                         venueSpinner.setSelection(addedIndex + 1)
                         Toast.makeText(this, "Gig added", Toast.LENGTH_SHORT).show()
                 }
@@ -370,6 +511,82 @@ class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
             } else {
                 Toast.makeText(this, "Error saving gig", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        dialog.show()
+    }
+
+    private fun showArchiveTourDialog() {
+        if (gigs.isEmpty()) {
+            AlertDialog.Builder(this)
+                .setTitle("Archive Tour")
+                .setMessage("There are no gigs to archive.")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+
+        val dp = resources.displayMetrics.density
+        val padding = (16 * dp).toInt()
+        val halfPad = (8 * dp).toInt()
+
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(padding, halfPad, padding, halfPad)
+        }
+
+        val labelArchive = TextView(this).apply { text = "Archive name (current tour):" }
+        val editArchiveName = EditText(this).apply {
+            setText(dataManager.getCurrentTourName())
+        }
+        val labelNew = TextView(this).apply {
+            text = "New tour name:"
+            setPadding(0, halfPad, 0, 0)
+        }
+        val editNewTourName = EditText(this).apply {
+            hint = "e.g. 2027 Europe Tour"
+        }
+
+        container.addView(labelArchive)
+        container.addView(editArchiveName)
+        container.addView(labelNew)
+        container.addView(editNewTourName)
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Archive Tour & Start New")
+            .setView(container)
+            .setPositiveButton("Archive & Start New", null)
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val archiveName = editArchiveName.text.toString().trim()
+                val newTourName = editNewTourName.text.toString().trim()
+                if (archiveName.isEmpty()) {
+                    editArchiveName.error = "Please enter an archive name"
+                    return@setOnClickListener
+                }
+                if (newTourName.isEmpty()) {
+                    editNewTourName.error = "Please enter a name for the new tour"
+                    return@setOnClickListener
+                }
+                if (dataManager.archiveTour(archiveName)) {
+                    dataManager.setCurrentTourName(newTourName)
+                    supportActionBar?.title = newTourName
+                    loadGigsData()
+                    updateSpinner()
+                    venueSpinner.setSelection(0)
+                    selectedGigIndex = -1
+                    detailsContainer.visibility = View.GONE
+                    actionButtonsContainer.visibility = View.GONE
+                    dialog.dismiss()
+                    Toast.makeText(this, "Tour archived: $archiveName", Toast.LENGTH_LONG).show()
+                } else {
+                    dialog.dismiss()
+                    Toast.makeText(this, "Error archiving tour", Toast.LENGTH_SHORT).show()
+                }
             }
         }
 
