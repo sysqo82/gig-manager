@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fitsSystemWindows="true">
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:minHeight="72dp"
+            android:background="@color/purple_700"
+            android:elevation="4dp"
+            app:titleTextColor="#FFFFFF"
+            app:subtitleTextColor="#CCCCCC"
+            app:navigationIcon="?attr/homeAsUpIndicator" />
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FFFFFF"
+        android:paddingBottom="200dp"
+        android:clipToPadding="false"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView android:id="@+id/completeBadge"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="&#10003; Completed" android:textSize="14sp" android:textColor="#FFFFFF"
+                android:background="#4CAF50" android:padding="8dp"
+                android:layout_marginBottom="12dp" android:visibility="gone" />
+
+            <!-- Date -->
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Date:" android:textSize="14sp" android:textStyle="bold"
+                android:textColor="#555555" android:paddingTop="8dp" />
+            <TextView android:id="@+id/gigDateText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="16sp" android:textColor="#000000" android:paddingBottom="12dp" />
+            <EditText android:id="@+id/editDate"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="Select date" android:padding="8dp"
+                android:focusable="false" android:clickable="true"
+                android:layout_marginBottom="12dp" android:visibility="gone" />
+
+            <!-- City & Venue -->
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="City &amp; Venue:" android:textSize="14sp" android:textStyle="bold"
+                android:textColor="#555555" android:paddingTop="8dp" />
+            <TextView android:id="@+id/cityVenueText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="16sp" android:textColor="#0000EE" android:paddingBottom="12dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true" android:focusable="true" />
+            <EditText android:id="@+id/editCityVenue"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="e.g., Folkstone Leas Cliff Hall" android:padding="8dp"
+                android:layout_marginBottom="12dp" android:visibility="gone" />
+
+            <!-- Tickets With Me -->
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Are Tickets With Me?" android:textSize="14sp" android:textStyle="bold"
+                android:textColor="#555555" android:paddingTop="8dp" />
+            <TextView android:id="@+id/ticketsWithMeText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="16sp" android:textColor="#000000" android:paddingBottom="12dp" />
+            <Spinner android:id="@+id/spinnerTicketsWithMe"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp" android:visibility="gone" />
+
+            <!-- Where Tickets Are -->
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Where Tickets Are:" android:textSize="14sp" android:textStyle="bold"
+                android:textColor="#555555" android:paddingTop="8dp" />
+            <TextView android:id="@+id/whereTicketsText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="16sp" android:textColor="#000000" android:paddingBottom="12dp" />
+            <EditText android:id="@+id/editWhereTickets"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="Location of tickets" android:padding="8dp" android:minLines="2"
+                android:layout_marginBottom="12dp" android:visibility="gone" />
+
+            <!-- Accommodation -->
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Accommodation:" android:textSize="14sp" android:textStyle="bold"
+                android:textColor="#555555" android:paddingTop="8dp" />
+            <TextView android:id="@+id/accommodationText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="16sp" android:textColor="#0000EE" android:paddingBottom="12dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true" android:focusable="true" />
+            <EditText android:id="@+id/editAccommodation"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="Full hotel address" android:padding="8dp"
+                android:layout_marginBottom="12dp" android:visibility="gone" />
+
+            <!-- Where Accom Booked -->
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Where the accommodation is booked:" android:textSize="14sp"
+                android:textStyle="bold" android:textColor="#555555" android:paddingTop="8dp" />
+            <TextView android:id="@+id/whereAccomBoughtText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="16sp" android:textColor="#000000" android:paddingBottom="12dp" />
+            <EditText android:id="@+id/editWhereAccomBought"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="e.g., Booking.com" android:padding="8dp"
+                android:layout_marginBottom="12dp" android:visibility="gone" />
+
+            <!-- Accommodation Dates -->
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Accommodation Dates:" android:textSize="14sp" android:textStyle="bold"
+                android:textColor="#555555" android:paddingTop="8dp" />
+            <TextView android:id="@+id/accomDatesText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="16sp" android:textColor="#000000" android:paddingBottom="12dp" />
+            <EditText android:id="@+id/editAccomDates"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="Tap to select check-in / check-out" android:padding="8dp"
+                android:focusable="false" android:clickable="true"
+                android:layout_marginBottom="12dp" android:visibility="gone" />
+
+            <!-- Cost -->
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Cost + Paid/Pay Back:" android:textSize="14sp" android:textStyle="bold"
+                android:textColor="#555555" android:paddingTop="8dp" />
+            <TextView android:id="@+id/costText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="16sp" android:textColor="#000000" android:paddingBottom="12dp" />
+            <EditText android:id="@+id/editCost"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="Cost details" android:padding="8dp" android:minLines="2"
+                android:layout_marginBottom="12dp" android:visibility="gone" />
+
+            <!-- Paid -->
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Paid?" android:textSize="14sp" android:textStyle="bold"
+                android:textColor="#555555" android:paddingTop="8dp" />
+            <TextView android:id="@+id/paidText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="16sp" android:textColor="#000000" android:paddingBottom="12dp" />
+            <Spinner android:id="@+id/spinnerPaid"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp" android:visibility="gone" />
+
+            <!-- Accommodation Comments -->
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Accommodation Comments:" android:textSize="14sp" android:textStyle="bold"
+                android:textColor="#555555" android:paddingTop="8dp" />
+            <TextView android:id="@+id/accomCommentsText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="16sp" android:textColor="#000000" android:paddingBottom="12dp" />
+            <EditText android:id="@+id/editAccomComments"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="Additional notes" android:padding="8dp" android:minLines="2"
+                android:layout_marginBottom="12dp" android:visibility="gone" />
+
+            <!-- Travel Details -->
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Travel Details:" android:textSize="14sp" android:textStyle="bold"
+                android:textColor="#555555" android:paddingTop="8dp" />
+            <TextView android:id="@+id/travelDetailsText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="16sp" android:textColor="#000000" android:paddingBottom="16dp" />
+            <EditText android:id="@+id/editTravelDetails"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="Travel information" android:padding="8dp" android:minLines="3"
+                android:layout_marginBottom="8dp" android:visibility="gone" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Bottom action bar pinned to bottom -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#FFFFFF"
+        android:elevation="8dp"
+        android:padding="12dp"
+        android:paddingBottom="20dp"
+        android:layout_gravity="bottom">
+
+        <!-- View mode actions -->
+        <LinearLayout android:id="@+id/viewModeActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <CheckBox android:id="@+id/checkComplete"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Mark as complete" android:textSize="16sp" android:textStyle="bold"
+                android:paddingBottom="8dp" />
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <Button android:id="@+id/btnEdit"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Edit" android:layout_marginEnd="8dp" />
+                <Button android:id="@+id/btnDelete"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Delete"
+                    android:backgroundTint="#D32F2F" android:layout_marginStart="8dp" />
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginTop="8dp">
+                <Button android:id="@+id/btnArchive"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Archive"
+                    android:backgroundTint="#FF9800" android:layout_marginEnd="8dp"
+                    android:visibility="gone" />
+                <Button android:id="@+id/btnRestore"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Restore"
+                    android:backgroundTint="#2196F3" android:visibility="gone" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Edit mode actions (shown instead of view mode) -->
+        <LinearLayout android:id="@+id/editModeActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <Button android:id="@+id/btnCancel"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="Cancel"
+                android:backgroundTint="#888888" android:layout_marginEnd="8dp" />
+            <Button android:id="@+id/btnSave"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="Save"
+                android:backgroundTint="@color/purple_500" android:layout_marginStart="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
