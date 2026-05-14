@@ -28,15 +28,39 @@
             android:name=".MainActivity"
             android:exported="false" />
         <activity
+            android:name=".GigDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.SuedeTourManager.NoActionBar"
+            android:parentActivityName=".MainActivity" />
+        <activity
             android:name=".ArchiveViewActivity"
             android:exported="false"
             android:theme="@style/Theme.SuedeTourManager.Archive"
             android:parentActivityName=".MainActivity" />
         <activity
+            android:name=".ArchiveGigDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.SuedeTourManager.Archive"
+            android:parentActivityName=".ArchiveViewActivity" />
+        <activity
             android:name=".AccountActivity"
             android:exported="false"
             android:theme="@style/Theme.SuedeTourManager.Account"
             android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ArtistListActivity"
+            android:exported="false"
+            android:theme="@style/Theme.SuedeTourManager.NoActionBar" />
+        <activity
+            android:name=".TourListActivity"
+            android:exported="false"
+            android:theme="@style/Theme.SuedeTourManager.NoActionBar"
+            android:parentActivityName=".ArtistListActivity" />
+        <activity
+            android:name=".TourDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.SuedeTourManager.NoActionBar"
+            android:parentActivityName=".TourListActivity" />
     </application>
 
 </manifest>

@@ -3,25 +3,16 @@ package com.suede.gigmanager
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.DatePickerDialog
-import android.content.Intent
 import android.graphics.Color
-import android.graphics.Paint
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.text.Spannable
-import android.text.SpannableStringBuilder
-import android.text.style.BackgroundColorSpan
-import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ListView
@@ -31,48 +22,37 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import java.util.regex.Pattern
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var venueSpinner: Spinner
-    private lateinit var detailsContainer: LinearLayout
-    private lateinit var actionButtonsContainer: LinearLayout
+    private lateinit var recyclerGigs: RecyclerView
+    private lateinit var emptyGigsText: TextView
     private lateinit var btnAddGig: Button
-    private lateinit var btnEditGig: Button
-    private lateinit var btnDeleteGig: Button
     private lateinit var btnArchiveTour: Button
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var archiveDrawerList: ListView
     private lateinit var archivesEmptyText: TextView
-    
-    private lateinit var checkComplete: CheckBox
-    private lateinit var dateText: TextView
-    private lateinit var cityVenueText: TextView
-    private lateinit var ticketsWithMeText: TextView
-    private lateinit var whereTicketsText: TextView
-    private lateinit var accommodationText: TextView
-    private lateinit var whereAccomBoughtText: TextView
-    private lateinit var accomDatesText: TextView
-    private lateinit var costText: TextView
-    private lateinit var paidText: TextView
-    private lateinit var accomCommentsText: TextView
-    private lateinit var travelDetailsText: TextView
 
     private lateinit var dataManager: GigDataManager
     private lateinit var syncService: GigSyncService
     private var gigs: MutableList<Gig> = mutableListOf()
-    private var selectedGigIndex: Int = -1
+
+    private val artistId get() = intent.getIntExtra("extra_artist_id", -1).takeIf { it > 0 }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
         window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         window.statusBarColor = ContextCompat.getColor(this, R.color.purple_700)
         @Suppress("DEPRECATION")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -81,110 +61,35 @@ class MainActivity : AppCompatActivity() {
         }
         setContentView(R.layout.activity_main)
 
-        // Initialize data manager
-        dataManager = GigDataManager(this)
+        val artistIdVal = intent.getIntExtra("extra_artist_id", -1).takeIf { it > 0 }
+        dataManager = GigDataManager(this, artistIdVal)
         syncService = GigSyncService(this)
 
-        // If not logged in, send back to login
         if (!syncService.isLoggedIn()) {
             startActivity(android.content.Intent(this, LoginActivity::class.java))
             finish()
             return
         }
 
-        // Set up toolbar
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
 
-        // Initialize views
-        initializeViews()
-
-        // Load gigs data
-        loadGigsData()
-
-        // Display current tour name
-        supportActionBar?.title = dataManager.getCurrentTourName()
-
-        // Setup spinner
-        setupVenueSpinner()
-        
-        // Setup button listeners
-        setupButtonListeners()
-    }
-
-    private fun initializeViews() {
-        venueSpinner = findViewById(R.id.venueSpinner)
-        detailsContainer = findViewById(R.id.detailsContainer)
-        actionButtonsContainer = findViewById(R.id.actionButtonsContainer)
+        recyclerGigs = findViewById(R.id.recyclerGigs)
+        emptyGigsText = findViewById(R.id.emptyGigsText)
         btnAddGig = findViewById(R.id.btnAddGig)
-        btnEditGig = findViewById(R.id.btnEditGig)
-        btnDeleteGig = findViewById(R.id.btnDeleteGig)
         btnArchiveTour = findViewById(R.id.btnArchiveTour)
         drawerLayout = findViewById(R.id.drawerLayout)
         archiveDrawerList = findViewById(R.id.archiveDrawerList)
         archivesEmptyText = findViewById(R.id.archivesEmptyText)
-        
-        checkComplete = findViewById(R.id.checkComplete)
-        dateText = findViewById(R.id.dateText)
-        cityVenueText = findViewById(R.id.cityVenueText)
-        ticketsWithMeText = findViewById(R.id.ticketsWithMeText)
-        whereTicketsText = findViewById(R.id.whereTicketsText)
-        accommodationText = findViewById(R.id.accommodationText)
-        whereAccomBoughtText = findViewById(R.id.whereAccomBoughtText)
-        accomDatesText = findViewById(R.id.accomDatesText)
-        costText = findViewById(R.id.costText)
-        paidText = findViewById(R.id.paidText)
-        accomCommentsText = findViewById(R.id.accomCommentsText)
-        travelDetailsText = findViewById(R.id.travelDetailsText)
 
-        // Add underlines to make them look like links
-        cityVenueText.paintFlags = cityVenueText.paintFlags or Paint.UNDERLINE_TEXT_FLAG
-        accommodationText.paintFlags = accommodationText.paintFlags or Paint.UNDERLINE_TEXT_FLAG
+        recyclerGigs.layoutManager = LinearLayoutManager(this)
 
-        cityVenueText.setOnClickListener {
-            val venue = cityVenueText.text.toString()
-            if (venue.isNotEmpty() && venue != "N/A") {
-                openGoogleMaps(venue)
-            }
-        }
+        loadGigsData()
+        supportActionBar?.title = dataManager.getCurrentTourName()
+        refreshPillList()
 
-        accommodationText.setOnClickListener {
-            val location = accommodationText.text.toString()
-            if (location.isNotEmpty() && location != "N/A") {
-                openGoogleMaps(location)
-            }
-        }
-
-        checkComplete.setOnCheckedChangeListener { _, isChecked ->
-            if (selectedGigIndex >= 0) {
-                val gig = gigs[selectedGigIndex]
-                if (gig.isComplete != isChecked) {
-                    val updatedGig = gig.copy(isComplete = isChecked)
-                    if (dataManager.updateGig(selectedGigIndex, updatedGig)) {
-                        // Reload gigs since update may reorder the list
-                        loadGigsData()
-                        updateSpinner()
-                        // Find the new index of the updated gig and select it
-                        val newIndex = gigs.indexOfFirst { it == updatedGig }.takeIf { it >= 0 } ?: 0
-                        selectedGigIndex = newIndex
-                        venueSpinner.setSelection(newIndex + 1)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun openGoogleMaps(address: String) {
-        val gmmIntentUri = Uri.parse("geo:0,0?q=${Uri.encode(address)}")
-        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-        mapIntent.setPackage("com.google.android.apps.maps")
-        if (mapIntent.resolveActivity(packageManager) != null) {
-            startActivity(mapIntent)
-        } else {
-            // Fallback to web browser if Maps app is not installed
-            val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(address)}"))
-            startActivity(webIntent)
-        }
+        btnAddGig.setOnClickListener { showAddGigDialog() }
+        btnArchiveTour.setOnClickListener { showArchiveTourDialog() }
     }
 
     override fun onResume() {
@@ -192,42 +97,56 @@ class MainActivity : AppCompatActivity() {
         loadGigsData()
         supportActionBar?.title = dataManager.getCurrentTourName()
         invalidateOptionsMenu()
-        updateSpinner()
-        selectedGigIndex = -1
-        detailsContainer.visibility = View.GONE
-        actionButtonsContainer.visibility = View.GONE
+        refreshPillList()
     }
 
     private fun loadGigsData() {
         gigs = dataManager.loadGigs().toMutableList()
     }
 
-    private fun setupVenueSpinner() {
-        updateSpinner()
+    private fun refreshPillList() {
+        if (gigs.isEmpty()) {
+            recyclerGigs.visibility = View.GONE
+            emptyGigsText.visibility = View.VISIBLE
+        } else {
+            recyclerGigs.visibility = View.VISIBLE
+            emptyGigsText.visibility = View.GONE
+            recyclerGigs.adapter = GigAdapter(gigs)
+        }
+    }
 
-        venueSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                if (position == 0) {
-                    detailsContainer.visibility = View.GONE
-                    actionButtonsContainer.visibility = View.GONE
-                    selectedGigIndex = -1
-                } else {
-                    selectedGigIndex = position - 1
-                    val selectedGig = gigs[selectedGigIndex]
-                    displayGigDetails(selectedGig)
-                    actionButtonsContainer.visibility = View.VISIBLE
+    private inner class GigAdapter(private val items: List<Gig>) :
+        RecyclerView.Adapter<GigAdapter.VH>() {
+
+        inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val card: MaterialCardView = itemView.findViewById(R.id.pillCard)
+            val dateText: TextView = itemView.findViewById(R.id.pillDate)
+            val cityText: TextView = itemView.findViewById(R.id.pillCity)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+            val v = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_archive_gig_pill, parent, false)
+            return VH(v)
+        }
+
+        override fun getItemCount() = items.size
+
+        override fun onBindViewHolder(holder: VH, position: Int) {
+            val gig = items[position]
+            holder.dateText.text = formatDisplayDate(gig.date)
+            holder.cityText.text = gig.cityVenue ?: "Unknown"
+            val bgColor = if (gig.isComplete == true) Color.parseColor("#C8E6C9") else Color.WHITE
+            holder.card.setCardBackgroundColor(bgColor)
+            holder.card.setOnClickListener {
+                val tours = dataManager.loadTours()
+                val firstTour = tours.firstOrNull() ?: return@setOnClickListener
+                // position is an index into active (non-archived) gigs; map back to full gigs index
+                val activeIndices = firstTour.gigs.mapIndexedNotNull { i, g ->
+                    if (g.isArchived != true) i else null
                 }
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                detailsContainer.visibility = View.GONE
-                actionButtonsContainer.visibility = View.GONE
-                selectedGigIndex = -1
+                val fullIndex = activeIndices.getOrNull(position) ?: position
+                GigDetailActivity.start(this@MainActivity, firstTour.id, fullIndex, artistId ?: 0)
             }
         }
     }
@@ -235,151 +154,22 @@ class MainActivity : AppCompatActivity() {
     private fun formatDisplayDate(dateStr: String?): String {
         val input = dateStr ?: return "N/A"
         return try {
-            // Handle "Friday, 30 January 2026" or "30/01/2026"
             val inputFormats = arrayOf(
                 SimpleDateFormat("EEEE, d MMMM yyyy", Locale.ENGLISH),
                 SimpleDateFormat("d/M/yyyy", Locale.ENGLISH)
             )
-            
             var date: java.util.Date? = null
             for (format in inputFormats) {
-                try {
-                    date = format.parse(input)
-                    if (date != null) break
-                } catch (e: Exception) {}
+                try { date = format.parse(input); if (date != null) break } catch (e: Exception) { }
             }
-            
-            if (date != null) {
-                val outputFormat = SimpleDateFormat("EEEE, d/M/yyyy", Locale.ENGLISH)
-                outputFormat.format(date)
-            } else {
-                input
-            }
-        } catch (e: Exception) {
-            input
-        }
-    }
-
-    private fun updateSpinner() {
-        val spinnerItems = mutableListOf("Select a city...")
-        
-        spinnerItems.addAll(gigs.map { 
-            val city = it.cityVenue?.trim()?.split(" ")?.firstOrNull() ?: it.cityVenue ?: "Unknown"
-            "${formatDisplayDate(it.date)} - $city"
-        })
-
-        val adapter = object : ArrayAdapter<String>(
-            this,
-            android.R.layout.simple_spinner_item,
-            spinnerItems
-        ) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = super.getView(position, convertView, parent)
-                // We don't set background color in getView to keep the drop-down chevron visible
-                return view
-            }
-
-            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = super.getDropDownView(position, convertView, parent)
-                if (position > 0 && gigs[position - 1].isComplete == true) {
-                    view.setBackgroundColor(Color.parseColor("#C8E6C9")) // Light Green
-                } else {
-                    view.setBackgroundColor(Color.TRANSPARENT)
-                }
-                return view
-            }
-        }
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        venueSpinner.adapter = adapter
-    }
-
-    private fun setupButtonListeners() {
-        btnAddGig.setOnClickListener {
-            showEditDialog(null, -1)
-        }
-
-        btnEditGig.setOnClickListener {
-            if (selectedGigIndex >= 0) {
-                showEditDialog(gigs[selectedGigIndex], selectedGigIndex)
-            }
-        }
-
-        btnDeleteGig.setOnClickListener {
-            if (selectedGigIndex >= 0) {
-                showDeleteConfirmation()
-            }
-        }
-
-        btnArchiveTour.setOnClickListener {
-            showArchiveTourDialog()
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.menu_main, menu)
-        return true
-    }
-
-    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        menu.findItem(R.id.action_sync_account)?.title =
-            if (syncService.isLoggedIn()) "Sync Account" else "Login / Register"
-        return super.onPrepareOptionsMenu(menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.action_archives) {
-            openArchivesDrawer()
-            return true
-        }
-        if (item.itemId == R.id.action_sync_account) {
-            AccountActivity.start(this)
-            return true
-        }
-        return super.onOptionsItemSelected(item)
-    }
-
-    private fun openArchivesDrawer() {
-        val archives = dataManager.loadArchives()
-        if (archives.isEmpty()) {
-            archivesEmptyText.visibility = View.VISIBLE
-            archiveDrawerList.visibility = View.GONE
-        } else {
-            archivesEmptyText.visibility = View.GONE
-            archiveDrawerList.visibility = View.VISIBLE
-            val items = archives.map { archive ->
-                val dateRange = run {
-                    val formats = listOf(
-                        SimpleDateFormat("EEEE, d MMMM yyyy", Locale.ENGLISH),
-                        SimpleDateFormat("d MMMM yyyy", Locale.ENGLISH),
-                        SimpleDateFormat("EEEE, d/M/yyyy", Locale.ENGLISH),
-                        SimpleDateFormat("d/M/yyyy", Locale.ENGLISH)
-                    )
-                    val short = SimpleDateFormat("d/M/yyyy", Locale.ENGLISH)
-                    fun parseDate(s: String): java.util.Date? {
-                        for (fmt in formats) { try { return fmt.parse(s) } catch (e: Exception) { } }
-                        return null
-                    }
-                    val dates = archive.gigs.mapNotNull { parseDate(it.date ?: "") }
-                    if (dates.isEmpty()) archive.archivedDate
-                    else "${short.format(dates.min())} – ${short.format(dates.max())}"
-                }
-                "${archive.tourName}\n$dateRange · ${archive.gigs.size} gig${if (archive.gigs.size != 1) "s" else ""}"
-            }
-            val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_2,
-                android.R.id.text1, items)
-            archiveDrawerList.adapter = adapter
-            archiveDrawerList.setOnItemClickListener { _, _, position, _ ->
-                drawerLayout.closeDrawer(GravityCompat.END)
-                ArchiveViewActivity.start(this, archives[position])
-            }
-        }
-        drawerLayout.openDrawer(GravityCompat.END)
+            if (date != null) SimpleDateFormat("EEEE, d/M/yyyy", Locale.ENGLISH).format(date) else input
+        } catch (e: Exception) { input }
     }
 
     @SuppressLint("DefaultLocale")
-    private fun showEditDialog(gig: Gig?, index: Int) {
+    private fun showAddGigDialog() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_gig, null)
-        
+
         val editDate = dialogView.findViewById<EditText>(R.id.editDate)
         val editCityVenue = dialogView.findViewById<EditText>(R.id.editCityVenue)
         val spinnerTicketsWithMe = dialogView.findViewById<Spinner>(R.id.spinnerTicketsWithMe)
@@ -395,80 +185,31 @@ class MainActivity : AppCompatActivity() {
         val yesNoOptions = arrayOf("Yes", "No")
         val spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, yesNoOptions)
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        
         spinnerTicketsWithMe.adapter = spinnerAdapter
         spinnerPaid.adapter = spinnerAdapter
 
         editDate.setOnClickListener {
             val calendar = Calendar.getInstance()
-            val existingDate = editDate.text.toString().trim()
-            if (existingDate.isNotEmpty()) {
-                val tryFormats = listOf(
-                    SimpleDateFormat("EEEE, d/M/yyyy", Locale.ENGLISH),
-                    SimpleDateFormat("d/M/yyyy", Locale.ENGLISH),
-                    SimpleDateFormat("EEEE, d MMMM yyyy", Locale.ENGLISH),
-                    SimpleDateFormat("d MMMM yyyy", Locale.ENGLISH)
-                )
-                for (fmt in tryFormats) {
-                    try {
-                        val parsed = fmt.parse(existingDate)
-                        if (parsed != null) { calendar.time = parsed; break }
-                    } catch (_: Exception) { }
-                }
-            }
-            val year = calendar.get(Calendar.YEAR)
-            val month = calendar.get(Calendar.MONTH)
-            val day = calendar.get(Calendar.DAY_OF_MONTH)
-
-            DatePickerDialog(this, { _, selectedYear, selectedMonth, selectedDay ->
-                val dateString = String.format("%d/%d/%d", selectedDay, selectedMonth + 1, selectedYear)
-                editDate.setText(dateString)
-            }, year, month, day).show()
+            DatePickerDialog(this, { _, y, m, d ->
+                editDate.setText(String.format("%d/%d/%d", d, m + 1, y))
+            }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
         }
-
-        // If editing existing gig, populate fields
-        gig?.let {
-            editDate.setText(it.date ?: "")
-            editCityVenue.setText(it.cityVenue ?: "")
-
-            val ticketsIndex = yesNoOptions.indexOf(it.ticketsWithMe ?: "")
-            if (ticketsIndex >= 0) spinnerTicketsWithMe.setSelection(ticketsIndex)
-            
-            editWhereTickets.setText(it.whereTicketsAre ?: "")
-            editAccommodation.setText(it.accommodation ?: "")
-            editWhereAccomBought.setText(it.whereAccomBought ?: "")
-            editAccomDates.setText(it.accomDates ?: "")
-            editCost.setText(it.cost ?: "")
-            
-            val paidIndex = yesNoOptions.indexOf(it.paid ?: "")
-            if (paidIndex >= 0) spinnerPaid.setSelection(paidIndex)
-            
-            editAccomComments.setText(it.accomComments ?: "")
-            editTravelDetails.setText(it.travelDetails ?: "")
-        }
-
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
-            .create()
-
-        dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
         editAccomDates.setOnClickListener {
             val cal = Calendar.getInstance()
             DatePickerDialog(this, { _, y1, m1, d1 ->
                 val checkIn = String.format("%d/%d/%d", d1, m1 + 1, y1)
                 DatePickerDialog(this, { _, y2, m2, d2 ->
-                    val checkOut = String.format("%d/%d/%d", d2, m2 + 1, y2)
-                    editAccomDates.setText("$checkIn – $checkOut")
+                    editAccomDates.setText("$checkIn \u2013 ${String.format("%d/%d/%d", d2, m2 + 1, y2)}")
                 }, y1, m1, d1).also { it.setTitle("Check-out date") }.show()
             }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
                 .also { it.setTitle("Check-in date") }.show()
         }
 
-        dialogView.findViewById<Button>(R.id.btnCancel).setOnClickListener {
-            dialog.dismiss()
-        }
+        val dialog = AlertDialog.Builder(this).setView(dialogView).create()
+        dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
+        dialogView.findViewById<Button>(R.id.btnCancel).setOnClickListener { dialog.dismiss() }
         dialogView.findViewById<Button>(R.id.btnSave).setOnClickListener {
             val newGig = Gig(
                 date = editDate.text.toString(),
@@ -482,39 +223,16 @@ class MainActivity : AppCompatActivity() {
                 paid = spinnerPaid.selectedItem.toString(),
                 accomComments = editAccomComments.text.toString(),
                 travelDetails = editTravelDetails.text.toString(),
-                isComplete = gig?.isComplete ?: false
+                isComplete = false
             )
-
             if (newGig.cityVenue.isNullOrEmpty()) {
                 Toast.makeText(this, "City & Venue is required", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-
-            val success = if (index >= 0) {
-                // Update existing gig
-                dataManager.updateGig(index, newGig)
-            } else {
-                // Add new gig
-                dataManager.addGig(newGig)
-            }
-
-            if (success) {
+            if (dataManager.addGig(newGig)) {
                 loadGigsData()
-                updateSpinner()
-                
-                if (index >= 0) {
-                        // After updating, the list may have been re-sorted. Find by cityVenue
-                        // because the date gets normalised on load and won't match newGig exactly.
-                        val updatedIndex = gigs.indexOfFirst { it.cityVenue == newGig.cityVenue }.takeIf { it >= 0 } ?: 0
-                        venueSpinner.setSelection(updatedIndex + 1)
-                        Toast.makeText(this, "Gig updated", Toast.LENGTH_SHORT).show()
-                } else {
-                        // After adding, the new gig may not be the last item due to sorting.
-                        val addedIndex = gigs.indexOfFirst { it.cityVenue == newGig.cityVenue }.takeIf { it >= 0 } ?: (gigs.size - 1)
-                        venueSpinner.setSelection(addedIndex + 1)
-                        Toast.makeText(this, "Gig added", Toast.LENGTH_SHORT).show()
-                }
-                
+                refreshPillList()
+                Toast.makeText(this, "Gig added", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
             } else {
                 Toast.makeText(this, "Error saving gig", Toast.LENGTH_SHORT).show()
@@ -544,16 +262,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         val labelArchive = TextView(this).apply { text = "Archive name (current tour):" }
-        val editArchiveName = EditText(this).apply {
-            setText(dataManager.getCurrentTourName())
-        }
+        val editArchiveName = EditText(this).apply { setText(dataManager.getCurrentTourName()) }
         val labelNew = TextView(this).apply {
             text = "New tour name:"
             setPadding(0, halfPad, 0, 0)
         }
-        val editNewTourName = EditText(this).apply {
-            hint = "e.g. 2027 Europe Tour"
-        }
+        val editNewTourName = EditText(this).apply { hint = "e.g. 2027 Europe Tour" }
 
         container.addView(labelArchive)
         container.addView(editArchiveName)
@@ -571,23 +285,13 @@ class MainActivity : AppCompatActivity() {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val archiveName = editArchiveName.text.toString().trim()
                 val newTourName = editNewTourName.text.toString().trim()
-                if (archiveName.isEmpty()) {
-                    editArchiveName.error = "Please enter an archive name"
-                    return@setOnClickListener
-                }
-                if (newTourName.isEmpty()) {
-                    editNewTourName.error = "Please enter a name for the new tour"
-                    return@setOnClickListener
-                }
+                if (archiveName.isEmpty()) { editArchiveName.error = "Please enter an archive name"; return@setOnClickListener }
+                if (newTourName.isEmpty()) { editNewTourName.error = "Please enter a name for the new tour"; return@setOnClickListener }
                 if (dataManager.archiveTour(archiveName)) {
                     dataManager.setCurrentTourName(newTourName)
                     supportActionBar?.title = newTourName
                     loadGigsData()
-                    updateSpinner()
-                    venueSpinner.setSelection(0)
-                    selectedGigIndex = -1
-                    detailsContainer.visibility = View.GONE
-                    actionButtonsContainer.visibility = View.GONE
+                    refreshPillList()
                     dialog.dismiss()
                     Toast.makeText(this, "Tour archived: $archiveName", Toast.LENGTH_LONG).show()
                 } else {
@@ -600,89 +304,57 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun showDeleteConfirmation() {
-        AlertDialog.Builder(this)
-            .setTitle("Delete Gig")
-            .setMessage("Are you sure you want to delete ${gigs[selectedGigIndex].cityVenue}?")
-            .setPositiveButton("Delete") { _, _ ->
-                if (dataManager.deleteGig(selectedGigIndex)) {
-                    loadGigsData()
-                    updateSpinner()
-                    venueSpinner.setSelection(0)
-                    Toast.makeText(this, "Gig deleted", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "Error deleting gig", Toast.LENGTH_SHORT).show()
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        menu.findItem(R.id.action_sync_account)?.title =
+            if (syncService.isLoggedIn()) "Sync Account" else "Login / Register"
+        return super.onPrepareOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.action_archives) { openArchivesDrawer(); return true }
+        if (item.itemId == R.id.action_sync_account) { AccountActivity.start(this); return true }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun openArchivesDrawer() {
+        val archives = dataManager.loadArchives()
+        if (archives.isEmpty()) {
+            archivesEmptyText.visibility = View.VISIBLE
+            archiveDrawerList.visibility = View.GONE
+        } else {
+            archivesEmptyText.visibility = View.GONE
+            archiveDrawerList.visibility = View.VISIBLE
+            val items = archives.map { archive ->
+                val dateRange = run {
+                    val formats = listOf(
+                        SimpleDateFormat("EEEE, d MMMM yyyy", Locale.ENGLISH),
+                        SimpleDateFormat("d MMMM yyyy", Locale.ENGLISH),
+                        SimpleDateFormat("EEEE, d/M/yyyy", Locale.ENGLISH),
+                        SimpleDateFormat("d/M/yyyy", Locale.ENGLISH)
+                    )
+                    val short = SimpleDateFormat("d/M/yyyy", Locale.ENGLISH)
+                    fun parseDate(s: String): java.util.Date? {
+                        for (fmt in formats) { try { return fmt.parse(s) } catch (e: Exception) { } }
+                        return null
+                    }
+                    val dates = archive.gigs.mapNotNull { parseDate(it.date ?: "") }
+                    if (dates.isEmpty()) archive.archivedDate
+                    else "${short.format(dates.min())} \u2013 ${short.format(dates.max())}"
                 }
+                "${archive.tourName}\n$dateRange \u00b7 ${archive.gigs.size} gig${if (archive.gigs.size != 1) "s" else ""}"
             }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun displayGigDetails(gig: Gig) {
-        detailsContainer.visibility = View.VISIBLE
-
-        checkComplete.isChecked = gig.isComplete ?: false
-        dateText.text = formatDisplayDate(gig.date)
-        cityVenueText.text = (gig.cityVenue ?: "").ifEmpty { "N/A" }
-        
-        highlightStatus(ticketsWithMeText, gig.ticketsWithMe ?: "")
-        highlightInText(whereTicketsText, gig.whereTicketsAre ?: "")
-        accommodationText.text = (gig.accommodation ?: "").ifEmpty { "N/A" }
-        whereAccomBoughtText.text = (gig.whereAccomBought ?: "").ifEmpty { "N/A" }
-        accomDatesText.text = (gig.accomDates ?: "").ifEmpty { "N/A" }
-        highlightInText(costText, gig.cost ?: "")
-        highlightStatus(paidText, gig.paid ?: "")
-        accomCommentsText.text = (gig.accomComments ?: "").ifEmpty { "N/A" }
-        highlightInText(travelDetailsText, gig.travelDetails ?: "")
-    }
-
-    private fun highlightStatus(textView: TextView, value: String?) {
-        val input = value ?: ""
-        textView.text = input.ifEmpty { "N/A" }
-        when {
-            input.equals("Yes", ignoreCase = true) -> {
-                textView.setBackgroundColor(Color.parseColor("#4CAF50")) // Green background
-                textView.setTextColor(Color.WHITE)
-                textView.setPadding(16, 8, 16, 8)
-            }
-            input.equals("No", ignoreCase = true) -> {
-                textView.setBackgroundColor(Color.parseColor("#F44336")) // Red background
-                textView.setTextColor(Color.WHITE)
-                textView.setPadding(16, 8, 16, 8)
-            }
-            else -> {
-                textView.setBackgroundColor(Color.TRANSPARENT)
-                textView.setTextColor(Color.BLACK)
-                textView.setPadding(0, 0, 0, 0)
+            val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_2, android.R.id.text1, items)
+            archiveDrawerList.adapter = adapter
+            archiveDrawerList.setOnItemClickListener { _, _, position, _ ->
+                drawerLayout.closeDrawer(GravityCompat.END)
+                ArchiveViewActivity.start(this, archives[position], artistId)
             }
         }
-    }
-
-    private fun highlightInText(textView: TextView, text: String?) {
-        val input = text ?: ""
-        if (input.isEmpty()) {
-            textView.text = "N/A"
-            return
-        }
-
-        val builder = SpannableStringBuilder(input)
-        
-        // Match "Yes" (case insensitive) as a whole word
-        val yesPattern = Pattern.compile("\\bYes\\b", Pattern.CASE_INSENSITIVE)
-        val yesMatcher = yesPattern.matcher(input)
-        while (yesMatcher.find()) {
-            builder.setSpan(BackgroundColorSpan(Color.parseColor("#4CAF50")), yesMatcher.start(), yesMatcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            builder.setSpan(ForegroundColorSpan(Color.WHITE), yesMatcher.start(), yesMatcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-        }
-
-        // Match "No" (case insensitive) as a whole word
-        val noPattern = Pattern.compile("\\bNo\\b", Pattern.CASE_INSENSITIVE)
-        val noMatcher = noPattern.matcher(input)
-        while (noMatcher.find()) {
-            builder.setSpan(BackgroundColorSpan(Color.parseColor("#F44336")), noMatcher.start(), noMatcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            builder.setSpan(ForegroundColorSpan(Color.WHITE), noMatcher.start(), noMatcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-        }
-
-        textView.text = builder
+        drawerLayout.openDrawer(GravityCompat.END)
     }
 }

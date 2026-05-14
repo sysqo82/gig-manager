@@ -91,24 +91,32 @@ class LoginActivity : AppCompatActivity() {
                 syncService.login(email, password)
             }
             runOnUiThread {
-                setLoading(false)
                 when (result) {
                     is ApiResult.Success -> {
+                        // Keep button disabled — we're navigating away; re-enabling it
+                        // would allow a second tap that races with the backup check.
                         Toast.makeText(
                             this,
                             if (isRegisterMode) "Account created" else "Signed in",
                             Toast.LENGTH_SHORT
                         ).show()
-                        goToMain()
+                        if (!isRegisterMode) {
+                            ServerBackupHelper.checkAndOffer(this, syncService) { goToMain() }
+                        } else {
+                            goToMain()
+                        }
                     }
-                    is ApiResult.Error -> showError(result.message)
+                    is ApiResult.Error -> {
+                        setLoading(false)
+                        showError(result.message)
+                    }
                 }
             }
         }.start()
     }
 
     private fun goToMain() {
-        startActivity(Intent(this, MainActivity::class.java))
+        startActivity(Intent(this, ArtistListActivity::class.java))
         finish()
     }
 

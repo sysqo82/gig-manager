@@ -93,12 +93,34 @@ class GigSyncService(context: Context) {
         }
     }
 
+    private fun patch(path: String, body: Any): ApiResult<JsonObject> {
+        return try {
+            val conn = openConnection(path, "PATCH")
+            conn.doOutput = true
+            OutputStreamWriter(conn.outputStream).use { it.write(gson.toJson(body)) }
+            parseResponse(conn)
+        } catch (e: Exception) {
+            Log.e(TAG, "PATCH $path failed", e)
+            ApiResult.Error("Network error: ${e.message}")
+        }
+    }
+
     private fun get(path: String): ApiResult<JsonObject> {
         return try {
             val conn = openConnection(path)
             parseResponse(conn)
         } catch (e: Exception) {
             Log.e(TAG, "GET $path failed", e)
+            ApiResult.Error("Network error: ${e.message}")
+        }
+    }
+
+    private fun delete(path: String): ApiResult<JsonObject> {
+        return try {
+            val conn = openConnection(path, "DELETE")
+            parseResponse(conn)
+        } catch (e: Exception) {
+            Log.e(TAG, "DELETE $path failed", e)
             ApiResult.Error("Network error: ${e.message}")
         }
     }
@@ -187,6 +209,118 @@ class GigSyncService(context: Context) {
                 val archives: List<TourArchive> = gson.fromJson(json.get("archives"), archivesType) ?: emptyList()
                 val syncedAt = json.get("last_synced_at")?.asString
                 ApiResult.Success(SyncData(tourName, gigs, archives, syncedAt))
+            }
+            is ApiResult.Error -> result
+        }
+    }
+    // ---- Artist + Deezer API ------------------------------------------------
+
+    fun fetchArtists(): ApiResult<ArtistListResponse> {
+        if (!isLoggedIn()) return ApiResult.Error("Not logged in")
+        return when (val result = get("/api/gigs/artists")) {
+            is ApiResult.Success -> {
+                val json = result.data
+                val artistsType = object : TypeToken<List<Artist>>() {}.type
+                val artists: List<Artist> = gson.fromJson(json.get("artists"), artistsType) ?: emptyList()
+                val hasOrphaned = json.get("hasOrphanedTours")?.asBoolean ?: false
+                ApiResult.Success(ArtistListResponse(artists, hasOrphaned))
+            }
+            is ApiResult.Error -> result
+        }
+    }
+
+    fun createArtist(name: String, imageUrl: String?): ApiResult<Artist> {
+        if (!isLoggedIn()) return ApiResult.Error("Not logged in")
+        val body = mapOf("name" to name, "imageUrl" to imageUrl)
+        return when (val result = post("/api/gigs/artists", body)) {
+            is ApiResult.Success -> {
+                val json = result.data
+                ApiResult.Success(
+                    Artist(
+                        id = json.get("id")?.asInt ?: 0,
+                        name = json.get("name")?.asString ?: name,
+                        imageUrl = json.get("imageUrl")?.takeIf { !it.isJsonNull }?.asString
+                    )
+                )
+            }
+            is ApiResult.Error -> result
+        }
+    }
+
+    fun assignOrphanedTours(artistId: Int): ApiResult<Unit> {
+        if (!isLoggedIn()) return ApiResult.Error("Not logged in")
+        return when (val result = post("/api/gigs/artists/assign-orphaned", mapOf("artistId" to artistId))) {
+            is ApiResult.Success -> ApiResult.Success(Unit)
+            is ApiResult.Error -> result
+        }
+    }
+
+    fun pushForArtist(artistId: Int, tourName: String, gigs: List<Gig>, archives: List<TourArchive>): ApiResult<String> {
+        if (!isLoggedIn()) return ApiResult.Error("Not logged in")
+        val body = mapOf("tourName" to tourName, "gigs" to gigs, "archives" to archives)
+        return when (val result = post("/api/gigs/artists/$artistId/sync", body)) {
+            is ApiResult.Success -> ApiResult.Success(result.data.get("synced_at")?.asString ?: "")
+            is ApiResult.Error -> result
+        }
+    }
+
+    fun pullForArtist(artistId: Int): ApiResult<SyncData> {
+        if (!isLoggedIn()) return ApiResult.Error("Not logged in")
+        return when (val result = get("/api/gigs/artists/$artistId/sync")) {
+            is ApiResult.Success -> {
+                val json = result.data
+                val tourName = json.get("tourName")?.asString ?: ""
+                val gigsType = object : TypeToken<List<Gig>>() {}.type
+                val archivesType = object : TypeToken<List<TourArchive>>() {}.type
+                val gigs: List<Gig> = gson.fromJson(json.get("gigs"), gigsType) ?: emptyList()
+                val archives: List<TourArchive> = gson.fromJson(json.get("archives"), archivesType) ?: emptyList()
+                val syncedAt = json.get("last_synced_at")?.takeIf { !it.isJsonNull }?.asString
+                ApiResult.Success(SyncData(tourName, gigs, archives, syncedAt))
+            }
+            is ApiResult.Error -> result
+        }
+    }
+
+    fun updateArtistImage(artistId: Int, imageUrl: String?): ApiResult<Unit> {
+        if (!isLoggedIn()) return ApiResult.Error("Not logged in")
+        val body = com.google.gson.JsonObject().apply { addProperty("imageUrl", imageUrl) }
+        return when (val result = patch("/api/gigs/artists/$artistId", body)) {
+            is ApiResult.Success -> ApiResult.Success(Unit)
+            is ApiResult.Error -> result
+        }
+    }
+
+    fun deleteArtist(artistId: Int): ApiResult<Unit> {
+        if (!isLoggedIn()) return ApiResult.Error("Not logged in")
+        return when (val result = delete("/api/gigs/artists/$artistId")) {
+            is ApiResult.Success -> ApiResult.Success(Unit)
+            is ApiResult.Error -> result
+        }
+    }
+
+    fun renameTour(artistId: Int, newName: String): ApiResult<Unit> {
+        if (!isLoggedIn()) return ApiResult.Error("Not logged in")
+        return when (val result = patch("/api/gigs/artists/$artistId/tour/name", mapOf("tourName" to newName))) {
+            is ApiResult.Success -> ApiResult.Success(Unit)
+            is ApiResult.Error -> result
+        }
+    }
+
+    fun searchDeezer(query: String): ApiResult<List<DeezerArtist>> {
+        if (!isLoggedIn()) return ApiResult.Error("Not logged in")
+        val encoded = java.net.URLEncoder.encode(query, "UTF-8")
+        return when (val result = get("/api/gigs/deezer?q=$encoded")) {
+            is ApiResult.Success -> {
+                val arr = result.data.getAsJsonArray("artists")
+                val list = arr?.mapNotNull { el ->
+                    val obj = el.asJsonObject
+                    DeezerArtist(
+                        id = obj.get("id")?.asLong ?: 0L,
+                        name = obj.get("name")?.asString ?: return@mapNotNull null,
+                        imageUrl = obj.get("imageUrl")?.takeIf { !it.isJsonNull }?.asString
+                    )
+                } ?: emptyList()
+                ApiResult.Success(list)
             }
             is ApiResult.Error -> result
         }

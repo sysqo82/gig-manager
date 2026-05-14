@@ -15,5 +15,6 @@ data class Gig(
     val paid: String?,
     val accomComments: String?,
     val travelDetails: String?,
-    val isComplete: Boolean? = false
+    val isComplete: Boolean? = false,
+    val isArchived: Boolean? = false
 )

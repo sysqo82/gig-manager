@@ -13,6 +13,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 
@@ -25,7 +26,6 @@ class AccountActivity : AppCompatActivity() {
     private lateinit var layoutLoggedOut: View
     private lateinit var tvLoggedInAs: TextView
     private lateinit var btnSyncNow: Button
-    private lateinit var btnRestore: Button
     private lateinit var btnSignOut: Button
     private lateinit var btnTabLogin: Button
     private lateinit var btnTabRegister: Button
@@ -45,6 +45,7 @@ class AccountActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         setContentView(R.layout.activity_account)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -57,7 +58,6 @@ class AccountActivity : AppCompatActivity() {
         layoutLoggedOut = findViewById(R.id.layoutLoggedOut)
         tvLoggedInAs = findViewById(R.id.tvLoggedInAs)
         btnSyncNow = findViewById(R.id.btnSyncNow)
-        btnRestore = findViewById(R.id.btnRestore)
         btnSignOut = findViewById(R.id.btnSignOut)
         btnTabLogin = findViewById(R.id.btnTabLogin)
         btnTabRegister = findViewById(R.id.btnTabRegister)
@@ -73,7 +73,6 @@ class AccountActivity : AppCompatActivity() {
         btnTabRegister.setOnClickListener { switchMode(register = true) }
         btnSubmit.setOnClickListener { onSubmit() }
         btnSyncNow.setOnClickListener { onSyncNow() }
-        btnRestore.setOnClickListener { onRestore() }
         btnSignOut.setOnClickListener { onSignOut() }
         switchMode(register = false) // set initial visual state
     }
@@ -144,6 +143,9 @@ class AccountActivity : AppCompatActivity() {
                     is ApiResult.Success -> {
                         refreshUi()
                         Toast.makeText(this, if (isRegisterMode) "Account created" else "Signed in", Toast.LENGTH_SHORT).show()
+                        if (!isRegisterMode) {
+                            ServerBackupHelper.checkAndOffer(this, syncService)
+                        }
                     }
                     is ApiResult.Error -> showError(result.message)
                 }
@@ -176,53 +178,8 @@ class AccountActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun onRestore() {
-        val progress = AlertDialog.Builder(this)
-            .setMessage("Checking server…")
-            .setCancelable(false)
-            .create()
-        progress.show()
-
-        Thread {
-            val result = syncService.pull()
-            runOnUiThread {
-                progress.dismiss()
-                when (result) {
-                    is ApiResult.Error -> AlertDialog.Builder(this)
-                        .setTitle("Restore Failed")
-                        .setMessage(result.message)
-                        .setPositiveButton("OK", null)
-                        .show()
-                    is ApiResult.Success -> {
-                        val data = result.data
-                        val gigCount = data.gigs.size
-                        val archiveCount = data.archives.size
-                        AlertDialog.Builder(this)
-                            .setTitle("Restore from Server")
-                            .setMessage(
-                                "Server copy:\n" +
-                                "• Tour: ${data.tourName.ifEmpty { "(unnamed)" }}\n" +
-                                "• $gigCount gig${if (gigCount != 1) "s" else ""}, $archiveCount archive${if (archiveCount != 1) "s" else ""}\n" +
-                                (if (data.lastSyncedAt != null) "• Last synced: ${data.lastSyncedAt}\n" else "") +
-                                "\nYour current local data will be replaced. " +
-                                "A local backup will be saved first so nothing is permanently lost."
-                            )
-                            .setPositiveButton("Restore") { _, _ ->
-                                dataManager.savePreRestoreBackup()
-                                dataManager.restoreArchives(data.archives)
-                                dataManager.saveGigsQuiet(data.gigs)
-                                dataManager.setCurrentTourName(data.tourName.ifEmpty { "Restored Tour" })
-                                Toast.makeText(this, "Data restored from server", Toast.LENGTH_LONG).show()
-                            }
-                            .setNegativeButton("Cancel", null)
-                            .show()
-                    }
-                }
-            }
-        }.start()
-    }
-
     private fun onSignOut() {
+        ServerBackupHelper.reset()
         syncService.clearCredentials()
         startActivity(android.content.Intent(this, LoginActivity::class.java)
             .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK))
@@ -232,7 +189,6 @@ class AccountActivity : AppCompatActivity() {
         progressBar.visibility = if (loading) View.VISIBLE else View.GONE
         btnSubmit.isEnabled = !loading
         btnSyncNow.isEnabled = !loading
-        btnRestore.isEnabled = !loading
         btnSignOut.isEnabled = !loading
         tvError.visibility = View.GONE
     }
