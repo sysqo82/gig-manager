@@ -82,6 +82,7 @@ class AccountActivity : AppCompatActivity() {
         return true
     }
 
+    @android.annotation.SuppressLint("SetTextI18n")
     private fun refreshUi() {
         if (syncService.isLoggedIn()) {
             layoutLoggedIn.visibility = View.VISIBLE

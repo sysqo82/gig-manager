@@ -3,6 +3,7 @@ package com.suede.gigmanager
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -28,9 +29,11 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.datepicker.MaterialDatePicker
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import androidx.core.graphics.toColorInt
 
 class MainActivity : AppCompatActivity() {
 
@@ -136,7 +139,7 @@ class MainActivity : AppCompatActivity() {
             val gig = items[position]
             holder.dateText.text = formatDisplayDate(gig.date)
             holder.cityText.text = gig.cityVenue ?: "Unknown"
-            val bgColor = if (gig.isComplete == true) Color.parseColor("#C8E6C9") else Color.WHITE
+            val bgColor = if (gig.isComplete == true) "#C8E6C9".toColorInt() else Color.WHITE
             holder.card.setCardBackgroundColor(bgColor)
             holder.card.setOnClickListener {
                 val tours = dataManager.loadTours()
@@ -177,10 +180,28 @@ class MainActivity : AppCompatActivity() {
         val editAccommodation = dialogView.findViewById<EditText>(R.id.editAccommodation)
         val editWhereAccomBought = dialogView.findViewById<EditText>(R.id.editWhereAccomBought)
         val editAccomDates = dialogView.findViewById<EditText>(R.id.editAccomDates)
+        val checkInButton = dialogView.findViewById<android.widget.LinearLayout>(R.id.checkInButton)
+        val checkOutButton = dialogView.findViewById<android.widget.LinearLayout>(R.id.checkOutButton)
+        val checkInDateText = dialogView.findViewById<android.widget.TextView>(R.id.checkInDateText)
+        val checkOutDateText = dialogView.findViewById<android.widget.TextView>(R.id.checkOutDateText)
         val editCost = dialogView.findViewById<EditText>(R.id.editCost)
         val spinnerPaid = dialogView.findViewById<Spinner>(R.id.spinnerPaid)
         val editAccomComments = dialogView.findViewById<EditText>(R.id.editAccomComments)
         val editTravelDetails = dialogView.findViewById<EditText>(R.id.editTravelDetails)
+        val editTravelDate = dialogView.findViewById<EditText>(R.id.editTravelDate)
+        val editGeneralComments = dialogView.findViewById<EditText>(R.id.editGeneralComments)
+        val editTravelFromPlace = dialogView.findViewById<EditText>(R.id.editTravelFromPlace)
+        val editTravelFromTime = dialogView.findViewById<EditText>(R.id.editTravelFromTime)
+        val editTravelToPlace = dialogView.findViewById<EditText>(R.id.editTravelToPlace)
+        val editTravelToTime = dialogView.findViewById<EditText>(R.id.editTravelToTime)
+        val editOutboundInfo = dialogView.findViewById<EditText>(R.id.editOutboundInfo)
+        val switchHasReturn = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchHasReturn)
+        val editReturnSection = dialogView.findViewById<LinearLayout>(R.id.editReturnSection)
+        val editReturnDate = dialogView.findViewById<EditText>(R.id.editReturnDate)
+        val editReturnFromPlace = dialogView.findViewById<EditText>(R.id.editReturnFromPlace)
+        val editReturnFromTime = dialogView.findViewById<EditText>(R.id.editReturnFromTime)
+        val editReturnToPlace = dialogView.findViewById<EditText>(R.id.editReturnToPlace)
+        val editReturnToTime = dialogView.findViewById<EditText>(R.id.editReturnToTime)
 
         val yesNoOptions = arrayOf("Yes", "No")
         val spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, yesNoOptions)
@@ -195,16 +216,48 @@ class MainActivity : AppCompatActivity() {
             }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
         }
 
-        editAccomDates.setOnClickListener {
-            val cal = Calendar.getInstance()
-            DatePickerDialog(this, { _, y1, m1, d1 ->
-                val checkIn = String.format("%d/%d/%d", d1, m1 + 1, y1)
-                DatePickerDialog(this, { _, y2, m2, d2 ->
-                    editAccomDates.setText("$checkIn \u2013 ${String.format("%d/%d/%d", d2, m2 + 1, y2)}")
-                }, y1, m1, d1).also { it.setTitle("Check-out date") }.show()
-            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
-                .also { it.setTitle("Check-in date") }.show()
+        editTravelDate.setOnClickListener {
+            val calendar = Calendar.getInstance()
+            DatePickerDialog(this, { _, y, m, d ->
+                editTravelDate.setText(String.format("%d/%d/%d", d, m + 1, y))
+            }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
         }
+        val showTimePicker = { field: EditText ->
+            val cal = Calendar.getInstance()
+            TimePickerDialog(this, { _, hour, minute ->
+                field.setText(String.format("%02d:%02d", hour, minute))
+            }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
+        }
+        editTravelFromTime.setOnClickListener { showTimePicker(editTravelFromTime) }
+        editTravelToTime.setOnClickListener { showTimePicker(editTravelToTime) }
+        editReturnDate.setOnClickListener {
+            val calendar = Calendar.getInstance()
+            DatePickerDialog(this, { _, y, m, d ->
+                editReturnDate.setText(String.format("%d/%d/%d", d, m + 1, y))
+            }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+        }
+        editReturnFromTime.setOnClickListener { showTimePicker(editReturnFromTime) }
+        editReturnToTime.setOnClickListener { showTimePicker(editReturnToTime) }
+        switchHasReturn.setOnCheckedChangeListener { _, hasReturn ->
+            editReturnSection.visibility = if (hasReturn) android.view.View.VISIBLE else android.view.View.GONE
+        }
+
+        val showAccomRangePicker = {
+            val picker = MaterialDatePicker.Builder.dateRangePicker()
+                .setTitleText("Select accommodation dates")
+                .build()
+            picker.show(supportFragmentManager, "accom_date_range")
+            picker.addOnPositiveButtonClickListener { selection ->
+                val formatter = SimpleDateFormat("d/M/yyyy", Locale.ENGLISH)
+                val checkIn = formatter.format(selection.first)
+                val checkOut = formatter.format(selection.second)
+                checkInDateText.text = checkIn
+                checkOutDateText.text = checkOut
+                editAccomDates.setText(String.format("%s \u2013 %s", checkIn, checkOut))
+            }
+        }
+        checkInButton.setOnClickListener { showAccomRangePicker() }
+        checkOutButton.setOnClickListener { showAccomRangePicker() }
 
         val dialog = AlertDialog.Builder(this).setView(dialogView).create()
         dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
@@ -223,6 +276,19 @@ class MainActivity : AppCompatActivity() {
                 paid = spinnerPaid.selectedItem.toString(),
                 accomComments = editAccomComments.text.toString(),
                 travelDetails = editTravelDetails.text.toString(),
+                travelDate = editTravelDate.text.toString(),
+                travelFromPlace = editTravelFromPlace.text.toString(),
+                travelFromTime = editTravelFromTime.text.toString(),
+                travelToPlace = editTravelToPlace.text.toString(),
+                travelToTime = editTravelToTime.text.toString(),
+                outboundInfo = editOutboundInfo.text.toString().ifEmpty { null },
+                hasReturnJourney = switchHasReturn.isChecked,
+                returnDate = if (switchHasReturn.isChecked) editReturnDate.text.toString() else null,
+                returnFromPlace = if (switchHasReturn.isChecked) editReturnFromPlace.text.toString() else null,
+                returnFromTime = if (switchHasReturn.isChecked) editReturnFromTime.text.toString() else null,
+                returnToPlace = if (switchHasReturn.isChecked) editReturnToPlace.text.toString() else null,
+                returnToTime = if (switchHasReturn.isChecked) editReturnToTime.text.toString() else null,
+                generalComments = editGeneralComments.text.toString(),
                 isComplete = false
             )
             if (newGig.cityVenue.isNullOrEmpty()) {
@@ -242,6 +308,7 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    @android.annotation.SuppressLint("SetTextI18n")
     private fun showArchiveTourDialog() {
         if (gigs.isEmpty()) {
             AlertDialog.Builder(this)

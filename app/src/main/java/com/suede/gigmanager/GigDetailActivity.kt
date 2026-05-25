@@ -3,6 +3,7 @@ package com.suede.gigmanager
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -28,6 +29,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.google.android.material.datepicker.MaterialDatePicker
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -68,6 +70,15 @@ class GigDetailActivity : AppCompatActivity() {
     private lateinit var paidText: TextView
     private lateinit var accomCommentsText: TextView
     private lateinit var travelDetailsText: TextView
+    private lateinit var travelDateText: TextView
+    private lateinit var generalCommentsText: TextView
+    private lateinit var travelFromText: TextView
+    private lateinit var travelToText: TextView
+    private lateinit var outboundInfoText: TextView
+    private lateinit var returnJourneySection: LinearLayout
+    private lateinit var returnDateText: TextView
+    private lateinit var returnFromText: TextView
+    private lateinit var returnToText: TextView
 
     // Edit mode fields
     private lateinit var editDate: EditText
@@ -81,6 +92,28 @@ class GigDetailActivity : AppCompatActivity() {
     private lateinit var spinnerPaid: Spinner
     private lateinit var editAccomComments: EditText
     private lateinit var editTravelDetails: EditText
+    private lateinit var editTravelDate: EditText
+    private lateinit var editGeneralComments: EditText
+    private lateinit var editOutboundSection: LinearLayout
+    private lateinit var editTravelFromPlace: EditText
+    private lateinit var editTravelFromTime: EditText
+    private lateinit var editTravelToPlace: EditText
+    private lateinit var editTravelToTime: EditText
+    private lateinit var editOutboundInfo: EditText
+    private lateinit var switchHasReturn: com.google.android.material.switchmaterial.SwitchMaterial
+    private lateinit var editReturnSection: LinearLayout
+    private lateinit var editReturnDate: EditText
+    private lateinit var editReturnFromPlace: EditText
+    private lateinit var editReturnFromTime: EditText
+    private lateinit var editReturnToPlace: EditText
+    private lateinit var editReturnToTime: EditText
+
+    // Booking.com-style date range UI
+    private lateinit var editAccomDatesContainer: LinearLayout
+    private lateinit var checkInButton: LinearLayout
+    private lateinit var checkOutButton: LinearLayout
+    private lateinit var checkInDateText: TextView
+    private lateinit var checkOutDateText: TextView
 
     // Bottom bar
     private lateinit var viewModeActions: LinearLayout
@@ -102,6 +135,10 @@ class GigDetailActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        toolbar.navigationIcon?.mutate()?.also {
+            androidx.core.graphics.drawable.DrawableCompat.setTint(it, android.graphics.Color.WHITE)
+            toolbar.navigationIcon = it
+        }
 
         tourId = intent.getStringExtra(EXTRA_TOUR_ID) ?: run { finish(); return }
         gigIndex = intent.getIntExtra(EXTRA_GIG_INDEX, -1)
@@ -120,6 +157,15 @@ class GigDetailActivity : AppCompatActivity() {
         paidText = findViewById(R.id.paidText)
         accomCommentsText = findViewById(R.id.accomCommentsText)
         travelDetailsText = findViewById(R.id.travelDetailsText)
+        travelDateText = findViewById(R.id.travelDateText)
+        generalCommentsText = findViewById(R.id.generalCommentsText)
+        travelFromText = findViewById(R.id.travelFromText)
+        travelToText = findViewById(R.id.travelToText)
+        outboundInfoText = findViewById(R.id.outboundInfoText)
+        returnJourneySection = findViewById(R.id.returnJourneySection)
+        returnDateText = findViewById(R.id.returnDateText)
+        returnFromText = findViewById(R.id.returnFromText)
+        returnToText = findViewById(R.id.returnToText)
 
         // Edit fields
         editDate = findViewById(R.id.editDate)
@@ -133,6 +179,27 @@ class GigDetailActivity : AppCompatActivity() {
         spinnerPaid = findViewById(R.id.spinnerPaid)
         editAccomComments = findViewById(R.id.editAccomComments)
         editTravelDetails = findViewById(R.id.editTravelDetails)
+        editTravelDate = findViewById(R.id.editTravelDate)
+        editGeneralComments = findViewById(R.id.editGeneralComments)
+        editOutboundSection = findViewById(R.id.editOutboundSection)
+        editTravelFromPlace = findViewById(R.id.editTravelFromPlace)
+        editTravelFromTime = findViewById(R.id.editTravelFromTime)
+        editTravelToPlace = findViewById(R.id.editTravelToPlace)
+        editTravelToTime = findViewById(R.id.editTravelToTime)
+        editOutboundInfo = findViewById(R.id.editOutboundInfo)
+        switchHasReturn = findViewById(R.id.switchHasReturn)
+        editReturnSection = findViewById(R.id.editReturnSection)
+        editReturnDate = findViewById(R.id.editReturnDate)
+        editReturnFromPlace = findViewById(R.id.editReturnFromPlace)
+        editReturnFromTime = findViewById(R.id.editReturnFromTime)
+        editReturnToPlace = findViewById(R.id.editReturnToPlace)
+        editReturnToTime = findViewById(R.id.editReturnToTime)
+
+        editAccomDatesContainer = findViewById(R.id.editAccomDatesContainer)
+        checkInButton = findViewById(R.id.checkInButton)
+        checkOutButton = findViewById(R.id.checkOutButton)
+        checkInDateText = findViewById(R.id.checkInDateText)
+        checkOutDateText = findViewById(R.id.checkOutDateText)
 
         // Bottom bar
         viewModeActions = findViewById(R.id.viewModeActions)
@@ -152,7 +219,17 @@ class GigDetailActivity : AppCompatActivity() {
         spinnerPaid.adapter = spinnerAdapter
 
         editDate.setOnClickListener { showDatePicker(editDate) }
-        editAccomDates.setOnClickListener { showAccomDatePicker() }
+        editTravelDate.setOnClickListener { showDatePicker(editTravelDate) }
+        checkInButton.setOnClickListener { showAccomDateRangePicker() }
+        checkOutButton.setOnClickListener { showAccomDateRangePicker() }
+        editTravelFromTime.setOnClickListener { showTimePicker(editTravelFromTime) }
+        editTravelToTime.setOnClickListener { showTimePicker(editTravelToTime) }
+        editReturnDate.setOnClickListener { showDatePicker(editReturnDate) }
+        editReturnFromTime.setOnClickListener { showTimePicker(editReturnFromTime) }
+        editReturnToTime.setOnClickListener { showTimePicker(editReturnToTime) }
+        switchHasReturn.setOnCheckedChangeListener { _, hasReturn ->
+            editReturnSection.visibility = if (hasReturn) View.VISIBLE else View.GONE
+        }
 
         loadGig()
         displayGig()
@@ -210,6 +287,26 @@ class GigDetailActivity : AppCompatActivity() {
         highlightStatus(paidText, gig.paid ?: "")
         accomCommentsText.text = (gig.accomComments ?: "").ifEmpty { "N/A" }
         highlightInText(travelDetailsText, gig.travelDetails ?: "")
+        travelDetailsText.visibility = if (gig.travelDetails.isNullOrEmpty()) View.GONE else View.VISIBLE
+        travelDateText.text = (gig.travelDate ?: "").ifEmpty { "N/A" }
+        generalCommentsText.text = (gig.generalComments ?: "").ifEmpty { "N/A" }
+        val fromPlace = gig.travelFromPlace ?: ""
+        val fromTime = gig.travelFromTime ?: ""
+        travelFromText.text = if (fromPlace.isEmpty()) "N/A" else if (fromTime.isEmpty()) fromPlace else "$fromPlace at $fromTime"
+        val toPlace = gig.travelToPlace ?: ""
+        val toTime = gig.travelToTime ?: ""
+        travelToText.text = if (toPlace.isEmpty()) "N/A" else if (toTime.isEmpty()) toPlace else "$toPlace at $toTime"
+        outboundInfoText.text = gig.outboundInfo ?: ""
+        outboundInfoText.visibility = if (gig.outboundInfo.isNullOrEmpty()) View.GONE else View.VISIBLE
+        val hasReturn = gig.hasReturnJourney != false
+        returnJourneySection.visibility = if (hasReturn) View.VISIBLE else View.GONE
+        returnDateText.text = (gig.returnDate ?: "").ifEmpty { "N/A" }
+        val retFromPlace = gig.returnFromPlace ?: ""
+        val retFromTime = gig.returnFromTime ?: ""
+        returnFromText.text = if (retFromPlace.isEmpty()) "N/A" else if (retFromTime.isEmpty()) retFromPlace else "$retFromPlace at $retFromTime"
+        val retToPlace = gig.returnToPlace ?: ""
+        val retToTime = gig.returnToTime ?: ""
+        returnToText.text = if (retToPlace.isEmpty()) "N/A" else if (retToTime.isEmpty()) retToPlace else "$retToPlace at $retToTime"
 
         checkComplete.setOnCheckedChangeListener(null)
         checkComplete.isChecked = gig.isComplete == true
@@ -243,6 +340,7 @@ class GigDetailActivity : AppCompatActivity() {
         }
     }
 
+    @android.annotation.SuppressLint("SetTextI18n")
     private fun enterEditMode() {
         val yesNoOptions = arrayOf("Yes", "No")
         editDate.setText(gig.date ?: "")
@@ -252,10 +350,37 @@ class GigDetailActivity : AppCompatActivity() {
         editAccommodation.setText(gig.accommodation ?: "")
         editWhereAccomBought.setText(gig.whereAccomBought ?: "")
         editAccomDates.setText(gig.accomDates ?: "")
+        // sync check-in/check-out display labels
+        val existingDates = gig.accomDates ?: ""
+        if (existingDates.contains("–") || existingDates.contains("-")) {
+            val parts = existingDates.split("–", "-").map { it.trim() }
+            checkInDateText.text = parts.getOrNull(0)?.ifEmpty { "Add date" } ?: "Add date"
+            checkOutDateText.text = parts.getOrNull(1)?.ifEmpty { "Add date" } ?: "Add date"
+        } else if (existingDates.isNotEmpty()) {
+            checkInDateText.text = existingDates
+            checkOutDateText.text = "Add date"
+        } else {
+            checkInDateText.text = "Add date"
+            checkOutDateText.text = "Add date"
+        }
         editCost.setText(gig.cost ?: "")
         yesNoOptions.indexOf(gig.paid ?: "").let { if (it >= 0) spinnerPaid.setSelection(it) }
         editAccomComments.setText(gig.accomComments ?: "")
         editTravelDetails.setText(gig.travelDetails ?: "")
+        editTravelDate.setText(gig.travelDate ?: "")
+        editGeneralComments.setText(gig.generalComments ?: "")
+        editTravelFromPlace.setText(gig.travelFromPlace ?: "")
+        editTravelFromTime.setText(gig.travelFromTime ?: "")
+        editTravelToPlace.setText(gig.travelToPlace ?: "")
+        editTravelToTime.setText(gig.travelToTime ?: "")
+        editOutboundInfo.setText(gig.outboundInfo ?: "")
+        switchHasReturn.isChecked = gig.hasReturnJourney != false
+        editReturnDate.setText(gig.returnDate ?: "")
+        editReturnFromPlace.setText(gig.returnFromPlace ?: "")
+        editReturnFromTime.setText(gig.returnFromTime ?: "")
+        editReturnToPlace.setText(gig.returnToPlace ?: "")
+        editReturnToTime.setText(gig.returnToTime ?: "")
+        editReturnSection.visibility = if (gig.hasReturnJourney != false) View.VISIBLE else View.GONE
 
         gigDateText.visibility = View.GONE;           editDate.visibility = View.VISIBLE
         cityVenueText.visibility = View.GONE;         editCityVenue.visibility = View.VISIBLE
@@ -263,11 +388,17 @@ class GigDetailActivity : AppCompatActivity() {
         whereTicketsText.visibility = View.GONE;      editWhereTickets.visibility = View.VISIBLE
         accommodationText.visibility = View.GONE;     editAccommodation.visibility = View.VISIBLE
         whereAccomBoughtText.visibility = View.GONE;  editWhereAccomBought.visibility = View.VISIBLE
-        accomDatesText.visibility = View.GONE;        editAccomDates.visibility = View.VISIBLE
+        accomDatesText.visibility = View.GONE;        editAccomDatesContainer.visibility = View.VISIBLE
         costText.visibility = View.GONE;              editCost.visibility = View.VISIBLE
         paidText.visibility = View.GONE;              spinnerPaid.visibility = View.VISIBLE
         accomCommentsText.visibility = View.GONE;     editAccomComments.visibility = View.VISIBLE
-        travelDetailsText.visibility = View.GONE;     editTravelDetails.visibility = View.VISIBLE
+        travelDateText.visibility = View.GONE;        editTravelDate.visibility = View.VISIBLE
+        generalCommentsText.visibility = View.GONE;   editGeneralComments.visibility = View.VISIBLE
+        travelFromText.visibility = View.GONE;   editOutboundSection.visibility = View.VISIBLE
+        travelToText.visibility = View.GONE;     switchHasReturn.visibility = View.VISIBLE
+        outboundInfoText.visibility = View.GONE; editOutboundInfo.visibility = View.VISIBLE
+        returnJourneySection.visibility = View.GONE
+        // editReturnSection and editTravelDetails visibility controlled by switchHasReturn state (set above)
 
         viewModeActions.visibility = View.GONE
         editModeActions.visibility = View.VISIBLE
@@ -282,11 +413,17 @@ class GigDetailActivity : AppCompatActivity() {
         whereTicketsText.visibility = View.VISIBLE;   editWhereTickets.visibility = View.GONE
         accommodationText.visibility = View.VISIBLE;  editAccommodation.visibility = View.GONE
         whereAccomBoughtText.visibility = View.VISIBLE; editWhereAccomBought.visibility = View.GONE
-        accomDatesText.visibility = View.VISIBLE;     editAccomDates.visibility = View.GONE
+        accomDatesText.visibility = View.VISIBLE;     editAccomDatesContainer.visibility = View.GONE
         costText.visibility = View.VISIBLE;           editCost.visibility = View.GONE
         paidText.visibility = View.VISIBLE;           spinnerPaid.visibility = View.GONE
         accomCommentsText.visibility = View.VISIBLE;  editAccomComments.visibility = View.GONE
-        travelDetailsText.visibility = View.VISIBLE;  editTravelDetails.visibility = View.GONE
+        travelDateText.visibility = View.VISIBLE;     editTravelDate.visibility = View.GONE
+        generalCommentsText.visibility = View.VISIBLE; editGeneralComments.visibility = View.GONE
+        travelFromText.visibility = View.VISIBLE;    editOutboundSection.visibility = View.GONE
+        travelToText.visibility = View.VISIBLE;      switchHasReturn.visibility = View.GONE
+        editOutboundInfo.visibility = View.GONE
+        returnJourneySection.visibility = if (gig.hasReturnJourney != false) View.VISIBLE else View.GONE
+        editReturnSection.visibility = View.GONE
 
         editModeActions.visibility = View.GONE
         viewModeActions.visibility = View.VISIBLE
@@ -306,6 +443,19 @@ class GigDetailActivity : AppCompatActivity() {
             paid = spinnerPaid.selectedItem.toString(),
             accomComments = editAccomComments.text.toString(),
             travelDetails = editTravelDetails.text.toString(),
+            travelDate = editTravelDate.text.toString(),
+            travelFromPlace = editTravelFromPlace.text.toString(),
+            travelFromTime = editTravelFromTime.text.toString(),
+            travelToPlace = editTravelToPlace.text.toString(),
+            travelToTime = editTravelToTime.text.toString(),
+            outboundInfo = editOutboundInfo.text.toString().ifEmpty { null },
+            hasReturnJourney = switchHasReturn.isChecked,
+            returnDate = if (switchHasReturn.isChecked) editReturnDate.text.toString() else null,
+            returnFromPlace = if (switchHasReturn.isChecked) editReturnFromPlace.text.toString() else null,
+            returnFromTime = if (switchHasReturn.isChecked) editReturnFromTime.text.toString() else null,
+            returnToPlace = if (switchHasReturn.isChecked) editReturnToPlace.text.toString() else null,
+            returnToTime = if (switchHasReturn.isChecked) editReturnToTime.text.toString() else null,
+            generalComments = editGeneralComments.text.toString(),
             isComplete = gig.isComplete,
             isArchived = gig.isArchived
         )
@@ -347,15 +497,27 @@ class GigDetailActivity : AppCompatActivity() {
     }
 
     @SuppressLint("DefaultLocale")
-    private fun showAccomDatePicker() {
-        val cal = Calendar.getInstance()
-        DatePickerDialog(this, { _, y1, m1, d1 ->
-            val checkIn = String.format("%d/%d/%d", d1, m1 + 1, y1)
-            DatePickerDialog(this, { _, y2, m2, d2 ->
-                editAccomDates.setText("$checkIn \u2013 ${String.format("%d/%d/%d", d2, m2 + 1, y2)}")
-            }, y1, m1, d1).also { it.setTitle("Check-out date") }.show()
-        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
-            .also { it.setTitle("Check-in date") }.show()
+    private fun showTimePicker(field: EditText) {
+        val calendar = Calendar.getInstance()
+        TimePickerDialog(this, { _, hour, minute ->
+            field.setText(String.format("%02d:%02d", hour, minute))
+        }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun showAccomDateRangePicker() {
+        val picker = MaterialDatePicker.Builder.dateRangePicker()
+            .setTitleText("Select accommodation dates")
+            .build()
+        picker.show(supportFragmentManager, "accom_date_range")
+        picker.addOnPositiveButtonClickListener { selection ->
+            val formatter = SimpleDateFormat("d/M/yyyy", Locale.ENGLISH)
+            val checkIn = formatter.format(selection.first)
+            val checkOut = formatter.format(selection.second)
+            checkInDateText.text = checkIn
+            checkOutDateText.text = checkOut
+            editAccomDates.setText(String.format("%s \u2013 %s", checkIn, checkOut))
+        }
     }
 
     private fun showMarkDoneConfirmation() {
@@ -458,6 +620,7 @@ class GigDetailActivity : AppCompatActivity() {
         }
     }
 
+    @android.annotation.SuppressLint("SetTextI18n")
     private fun highlightInText(textView: TextView, text: String?) {
         val input = text ?: ""
         if (input.isEmpty()) { textView.text = "N/A"; return }

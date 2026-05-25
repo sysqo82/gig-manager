@@ -55,6 +55,10 @@ class TourListActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.title = artistName
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        binding.toolbar.navigationIcon?.mutate()?.also {
+            androidx.core.graphics.drawable.DrawableCompat.setTint(it, android.graphics.Color.WHITE)
+            binding.toolbar.navigationIcon = it
+        }
 
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
 
