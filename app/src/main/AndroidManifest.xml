@@ -31,6 +31,7 @@
             android:name=".GigDetailActivity"
             android:exported="false"
             android:theme="@style/Theme.SuedeTourManager.NoActionBar"
+            android:windowSoftInputMode="adjustResize"
             android:parentActivityName=".MainActivity" />
         <activity
             android:name=".ArchiveViewActivity"
@@ -60,6 +61,7 @@
             android:name=".TourDetailActivity"
             android:exported="false"
             android:theme="@style/Theme.SuedeTourManager.NoActionBar"
+            android:windowSoftInputMode="adjustResize"
             android:parentActivityName=".TourListActivity" />
     </application>
 

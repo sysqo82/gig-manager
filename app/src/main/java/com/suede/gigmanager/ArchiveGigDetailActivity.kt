@@ -14,6 +14,7 @@ import android.text.style.ForegroundColorSpan
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -25,6 +26,7 @@ import com.google.gson.Gson
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.regex.Pattern
+import androidx.core.graphics.toColorInt
 
 class ArchiveGigDetailActivity : AppCompatActivity() {
 
@@ -45,6 +47,15 @@ class ArchiveGigDetailActivity : AppCompatActivity() {
     private lateinit var paidText: TextView
     private lateinit var accomCommentsText: TextView
     private lateinit var travelDetailsText: TextView
+    private lateinit var travelDateText: TextView
+    private lateinit var generalCommentsText: TextView
+    private lateinit var travelFromText: TextView
+    private lateinit var travelToText: TextView
+    private lateinit var archiveOutboundInfoText: TextView
+    private lateinit var archiveReturnJourneySection: LinearLayout
+    private lateinit var archiveReturnDateText: TextView
+    private lateinit var archiveReturnFromText: TextView
+    private lateinit var archiveReturnToText: TextView
     private lateinit var btnDelete: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,6 +74,10 @@ class ArchiveGigDetailActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        toolbar.navigationIcon?.mutate()?.also {
+            androidx.core.graphics.drawable.DrawableCompat.setTint(it, android.graphics.Color.WHITE)
+            toolbar.navigationIcon = it
+        }
 
         artistId = intent.getIntExtra(EXTRA_ARTIST_ID, -1).takeIf { it > 0 }
         val archiveJson = intent.getStringExtra(EXTRA_ARCHIVE_JSON) ?: run { finish(); return }
@@ -81,6 +96,15 @@ class ArchiveGigDetailActivity : AppCompatActivity() {
         paidText = findViewById(R.id.archivePaidText)
         accomCommentsText = findViewById(R.id.archiveAccomCommentsText)
         travelDetailsText = findViewById(R.id.archiveTravelDetailsText)
+        travelDateText = findViewById(R.id.archiveTravelDateText)
+        generalCommentsText = findViewById(R.id.archiveGeneralCommentsText)
+        travelFromText = findViewById(R.id.archiveTravelFromText)
+        travelToText = findViewById(R.id.archiveTravelToText)
+        archiveOutboundInfoText = findViewById(R.id.archiveOutboundInfoText)
+        archiveReturnJourneySection = findViewById(R.id.archiveReturnJourneySection)
+        archiveReturnDateText = findViewById(R.id.archiveReturnDateText)
+        archiveReturnFromText = findViewById(R.id.archiveReturnFromText)
+        archiveReturnToText = findViewById(R.id.archiveReturnToText)
         btnDelete = findViewById(R.id.btnDeleteArchiveGig)
 
         btnDelete.setOnClickListener { showDeleteConfirmation() }
@@ -120,6 +144,26 @@ class ArchiveGigDetailActivity : AppCompatActivity() {
         highlightStatus(paidText, gig.paid ?: "")
         accomCommentsText.text = (gig.accomComments ?: "").ifEmpty { "N/A" }
         highlightInText(travelDetailsText, gig.travelDetails ?: "")
+        travelDetailsText.visibility = if (gig.travelDetails.isNullOrEmpty()) android.view.View.GONE else android.view.View.VISIBLE
+        travelDateText.text = (gig.travelDate ?: "").ifEmpty { "N/A" }
+        generalCommentsText.text = (gig.generalComments ?: "").ifEmpty { "N/A" }
+        val fromPlace = gig.travelFromPlace ?: ""
+        val fromTime = gig.travelFromTime ?: ""
+        travelFromText.text = if (fromPlace.isEmpty()) "N/A" else if (fromTime.isEmpty()) fromPlace else "$fromPlace at $fromTime"
+        val toPlace = gig.travelToPlace ?: ""
+        val toTime = gig.travelToTime ?: ""
+        travelToText.text = if (toPlace.isEmpty()) "N/A" else if (toTime.isEmpty()) toPlace else "$toPlace at $toTime"
+        archiveOutboundInfoText.text = gig.outboundInfo ?: ""
+        archiveOutboundInfoText.visibility = if (gig.outboundInfo.isNullOrEmpty()) android.view.View.GONE else android.view.View.VISIBLE
+        val hasReturn = gig.hasReturnJourney != false
+        archiveReturnJourneySection.visibility = if (hasReturn) android.view.View.VISIBLE else android.view.View.GONE
+        archiveReturnDateText.text = (gig.returnDate ?: "").ifEmpty { "N/A" }
+        val retFromPlace = gig.returnFromPlace ?: ""
+        val retFromTime = gig.returnFromTime ?: ""
+        archiveReturnFromText.text = if (retFromPlace.isEmpty()) "N/A" else if (retFromTime.isEmpty()) retFromPlace else "$retFromPlace at $retFromTime"
+        val retToPlace = gig.returnToPlace ?: ""
+        val retToTime = gig.returnToTime ?: ""
+        archiveReturnToText.text = if (retToPlace.isEmpty()) "N/A" else if (retToTime.isEmpty()) retToPlace else "$retToPlace at $retToTime"
     }
 
     private fun showDeleteConfirmation() {
@@ -180,12 +224,12 @@ class ArchiveGigDetailActivity : AppCompatActivity() {
         textView.text = input.ifEmpty { "N/A" }
         when {
             input.equals("Yes", ignoreCase = true) -> {
-                textView.setBackgroundColor(Color.parseColor("#4CAF50"))
+                textView.setBackgroundColor("#4CAF50".toColorInt())
                 textView.setTextColor(Color.WHITE)
                 textView.setPadding(16, 8, 16, 8)
             }
             input.equals("No", ignoreCase = true) -> {
-                textView.setBackgroundColor(Color.parseColor("#F44336"))
+                textView.setBackgroundColor("#F44336".toColorInt())
                 textView.setTextColor(Color.WHITE)
                 textView.setPadding(16, 8, 16, 8)
             }
@@ -197,6 +241,7 @@ class ArchiveGigDetailActivity : AppCompatActivity() {
         }
     }
 
+    @android.annotation.SuppressLint("SetTextI18n")
     private fun highlightInText(textView: TextView, text: String?) {
         val input = text ?: ""
         if (input.isEmpty()) { textView.text = "N/A"; return }
@@ -204,13 +249,13 @@ class ArchiveGigDetailActivity : AppCompatActivity() {
         val yesPattern = Pattern.compile("\\bYes\\b", Pattern.CASE_INSENSITIVE)
         val yesMatcher = yesPattern.matcher(input)
         while (yesMatcher.find()) {
-            builder.setSpan(BackgroundColorSpan(Color.parseColor("#4CAF50")), yesMatcher.start(), yesMatcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            builder.setSpan(BackgroundColorSpan("#4CAF50".toColorInt()), yesMatcher.start(), yesMatcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             builder.setSpan(ForegroundColorSpan(Color.WHITE), yesMatcher.start(), yesMatcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         val noPattern = Pattern.compile("\\bNo\\b", Pattern.CASE_INSENSITIVE)
         val noMatcher = noPattern.matcher(input)
         while (noMatcher.find()) {
-            builder.setSpan(BackgroundColorSpan(Color.parseColor("#F44336")), noMatcher.start(), noMatcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            builder.setSpan(BackgroundColorSpan("#F44336".toColorInt()), noMatcher.start(), noMatcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             builder.setSpan(ForegroundColorSpan(Color.WHITE), noMatcher.start(), noMatcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         textView.text = builder

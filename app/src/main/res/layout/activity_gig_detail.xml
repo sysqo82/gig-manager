@@ -18,7 +18,8 @@
             android:elevation="4dp"
             app:titleTextColor="#FFFFFF"
             app:subtitleTextColor="#CCCCCC"
-            app:navigationIcon="?attr/homeAsUpIndicator" />
+            app:navigationIcon="?attr/homeAsUpIndicator"
+            app:navigationIconTint="#FFFFFF" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -124,11 +125,81 @@
             <TextView android:id="@+id/accomDatesText"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:textSize="16sp" android:textColor="#000000" android:paddingBottom="12dp" />
+
+            <!-- Booking.com-style check-in / check-out selector (edit mode) -->
+            <LinearLayout
+                android:id="@+id/editAccomDatesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                android:background="#F5F5F5"
+                android:padding="4dp">
+
+                <LinearLayout
+                    android:id="@+id/checkInButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:padding="10dp"
+                    android:background="@android:color/white"
+                    android:layout_marginEnd="2dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="CHECK-IN"
+                        android:textSize="10sp"
+                        android:textColor="#888888"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/checkInDateText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Add date"
+                        android:textSize="15sp"
+                        android:textColor="#1A1A2E"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/checkOutButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:padding="10dp"
+                    android:background="@android:color/white"
+                    android:layout_marginStart="2dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="CHECK-OUT"
+                        android:textSize="10sp"
+                        android:textColor="#888888"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/checkOutDateText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Add date"
+                        android:textSize="15sp"
+                        android:textColor="#1A1A2E"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Hidden field to store the formatted date range string -->
             <EditText android:id="@+id/editAccomDates"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:hint="Tap to select check-in / check-out" android:padding="8dp"
-                android:focusable="false" android:clickable="true"
-                android:layout_marginBottom="12dp" android:visibility="gone" />
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
 
             <!-- Cost -->
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -165,17 +236,180 @@
                 android:hint="Additional notes" android:padding="8dp" android:minLines="2"
                 android:layout_marginBottom="12dp" android:visibility="gone" />
 
+            <!-- General Comments -->
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="General Comments:" android:textSize="14sp" android:textStyle="bold"
+                android:textColor="#555555" android:paddingTop="8dp" />
+            <TextView android:id="@+id/generalCommentsText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="16sp" android:textColor="#000000" android:paddingBottom="12dp" />
+            <EditText android:id="@+id/editGeneralComments"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="" android:padding="8dp" android:minLines="3"
+                android:gravity="top" android:inputType="textMultiLine"
+                android:layout_marginBottom="12dp" android:visibility="gone" />
+
             <!-- Travel Details -->
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="Travel Details:" android:textSize="14sp" android:textStyle="bold"
                 android:textColor="#555555" android:paddingTop="8dp" />
-            <TextView android:id="@+id/travelDetailsText"
+
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Travel Date:" android:textSize="12sp" android:textStyle="bold"
+                android:textColor="#777777" android:paddingTop="4dp" />
+            <TextView android:id="@+id/travelDateText"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:textSize="16sp" android:textColor="#000000" android:paddingBottom="16dp" />
-            <EditText android:id="@+id/editTravelDetails"
+                android:textSize="16sp" android:textColor="#000000" android:paddingBottom="8dp" />
+            <EditText android:id="@+id/editTravelDate"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:hint="Travel information" android:padding="8dp" android:minLines="3"
+                android:hint="Select travel date" android:padding="8dp"
+                android:focusable="false" android:clickable="true"
                 android:layout_marginBottom="8dp" android:visibility="gone" />
+
+            <!-- Outbound: From / To with time (view mode) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="4dp">
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical" android:layout_marginEnd="8dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="From:" android:textSize="12sp" android:textStyle="bold"
+                        android:textColor="#777777" />
+                    <TextView android:id="@+id/travelFromText"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:textSize="15sp" android:textColor="#000000" android:paddingBottom="8dp" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="To:" android:textSize="12sp" android:textStyle="bold"
+                        android:textColor="#777777" />
+                    <TextView android:id="@+id/travelToText"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:textSize="15sp" android:textColor="#000000" android:paddingBottom="8dp" />
+                </LinearLayout>
+            </LinearLayout>
+            <TextView android:id="@+id/outboundInfoText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="14sp" android:textColor="#555555"
+                android:paddingTop="4dp" android:paddingBottom="4dp" />
+            <!-- Return journey section (view mode, hidden if no return) -->
+            <LinearLayout android:id="@+id/returnJourneySection"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:visibility="gone">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Return Journey:" android:textSize="12sp" android:textStyle="bold"
+                    android:textColor="#777777" android:paddingTop="4dp" />
+                <TextView android:id="@+id/returnDateText"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:textSize="15sp" android:textColor="#000000" android:paddingBottom="4dp" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginBottom="4dp">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:orientation="vertical" android:layout_marginEnd="8dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="From:" android:textSize="12sp" android:textStyle="bold"
+                            android:textColor="#777777" />
+                        <TextView android:id="@+id/returnFromText"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:textSize="15sp" android:textColor="#000000" android:paddingBottom="8dp" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="To:" android:textSize="12sp" android:textStyle="bold"
+                            android:textColor="#777777" />
+                        <TextView android:id="@+id/returnToText"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:textSize="15sp" android:textColor="#000000" android:paddingBottom="8dp" />
+                    </LinearLayout>
+                </LinearLayout>
+                <TextView android:id="@+id/travelDetailsText"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:textSize="14sp" android:textColor="#555555"
+                    android:paddingTop="4dp" android:paddingBottom="4dp" />
+            </LinearLayout>
+            <!-- Edit mode: Outbound From/To with time -->
+            <LinearLayout android:id="@+id/editOutboundSection"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:visibility="gone">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginBottom="4dp">
+                    <EditText android:id="@+id/editTravelFromPlace"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:hint="From" android:padding="8dp"
+                        android:layout_marginEnd="4dp" />
+                    <EditText android:id="@+id/editTravelFromTime"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:hint="Time" android:padding="8dp"
+                        android:focusable="false" android:clickable="true" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginBottom="4dp">
+                    <EditText android:id="@+id/editTravelToPlace"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:hint="To" android:padding="8dp"
+                        android:layout_marginEnd="4dp" />
+                    <EditText android:id="@+id/editTravelToTime"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:hint="Time" android:padding="8dp"
+                        android:focusable="false" android:clickable="true" />
+                </LinearLayout>
+            </LinearLayout>
+            <EditText android:id="@+id/editOutboundInfo"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="Travel information" android:padding="8dp" android:minLines="2"
+                android:gravity="top" android:inputType="textMultiLine"
+                android:layout_marginTop="4dp" android:layout_marginBottom="4dp"
+                android:visibility="gone" />
+            <!-- Edit mode: Return journey switch -->
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switchHasReturn"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Return journey"
+                android:textSize="14sp"
+                android:checked="true"
+                android:layout_marginTop="4dp" android:layout_marginBottom="4dp"
+                android:visibility="gone" />
+            <!-- Edit mode: Return section -->
+            <LinearLayout android:id="@+id/editReturnSection"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:visibility="gone">
+                <EditText android:id="@+id/editReturnDate"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:hint="Return date" android:padding="8dp"
+                    android:focusable="false" android:clickable="true"
+                    android:layout_marginBottom="4dp" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginBottom="4dp">
+                    <EditText android:id="@+id/editReturnFromPlace"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:hint="Return from" android:padding="8dp"
+                        android:layout_marginEnd="4dp" />
+                    <EditText android:id="@+id/editReturnFromTime"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:hint="Time" android:padding="8dp"
+                        android:focusable="false" android:clickable="true" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginBottom="8dp">
+                    <EditText android:id="@+id/editReturnToPlace"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="2" android:hint="Return to" android:padding="8dp"
+                        android:layout_marginEnd="4dp" />
+                    <EditText android:id="@+id/editReturnToTime"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:hint="Time" android:padding="8dp"
+                        android:focusable="false" android:clickable="true" />
+                </LinearLayout>
+                <EditText android:id="@+id/editTravelDetails"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:hint="Travel information" android:padding="8dp" android:minLines="2"
+                    android:gravity="top" android:inputType="textMultiLine"
+                    android:layout_marginTop="4dp" android:layout_marginBottom="4dp" />
+            </LinearLayout>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

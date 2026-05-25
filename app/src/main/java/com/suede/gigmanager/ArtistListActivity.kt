@@ -285,6 +285,7 @@ class ArtistListActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    @android.annotation.SuppressLint("SetTextI18n")
     private fun debouncedDeezerSearch(
         etName: EditText,
         progressSearch: ProgressBar,

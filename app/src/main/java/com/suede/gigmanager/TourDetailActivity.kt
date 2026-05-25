@@ -2,6 +2,7 @@ package com.suede.gigmanager
 
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -25,6 +26,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -68,10 +70,27 @@ class TourDetailActivity : AppCompatActivity() {
     private lateinit var addEditAccommodation: EditText
     private lateinit var addEditWhereAccomBought: EditText
     private lateinit var addEditAccomDates: EditText
+    private lateinit var addCheckInButton: LinearLayout
+    private lateinit var addCheckOutButton: LinearLayout
+    private lateinit var addCheckInDateText: TextView
+    private lateinit var addCheckOutDateText: TextView
     private lateinit var addEditCost: EditText
     private lateinit var addSpinnerPaid: Spinner
     private lateinit var addEditAccomComments: EditText
     private lateinit var addEditTravelDetails: EditText
+    private lateinit var addEditTravelDate: EditText
+    private lateinit var addEditTravelFromPlace: EditText
+    private lateinit var addEditTravelFromTime: EditText
+    private lateinit var addEditTravelToPlace: EditText
+    private lateinit var addEditTravelToTime: EditText
+    private lateinit var addEditOutboundInfo: EditText
+    private lateinit var addSwitchHasReturn: com.google.android.material.switchmaterial.SwitchMaterial
+    private lateinit var addEditReturnSection: LinearLayout
+    private lateinit var addEditReturnDate: EditText
+    private lateinit var addEditReturnFromPlace: EditText
+    private lateinit var addEditReturnFromTime: EditText
+    private lateinit var addEditReturnToPlace: EditText
+    private lateinit var addEditReturnToTime: EditText
     private lateinit var btnCancelAdd: Button
     private lateinit var btnSaveAdd: Button
 
@@ -91,6 +110,10 @@ class TourDetailActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        toolbar.navigationIcon?.mutate()?.also {
+            androidx.core.graphics.drawable.DrawableCompat.setTint(it, android.graphics.Color.WHITE)
+            toolbar.navigationIcon = it
+        }
 
         // List views
         listContainer = findViewById(R.id.listContainer)
@@ -112,10 +135,27 @@ class TourDetailActivity : AppCompatActivity() {
         addEditAccommodation = findViewById(R.id.addEditAccommodation)
         addEditWhereAccomBought = findViewById(R.id.addEditWhereAccomBought)
         addEditAccomDates = findViewById(R.id.addEditAccomDates)
+        addCheckInButton = findViewById(R.id.addCheckInButton)
+        addCheckOutButton = findViewById(R.id.addCheckOutButton)
+        addCheckInDateText = findViewById(R.id.addCheckInDateText)
+        addCheckOutDateText = findViewById(R.id.addCheckOutDateText)
         addEditCost = findViewById(R.id.addEditCost)
         addSpinnerPaid = findViewById(R.id.addSpinnerPaid)
         addEditAccomComments = findViewById(R.id.addEditAccomComments)
         addEditTravelDetails = findViewById(R.id.addEditTravelDetails)
+        addEditTravelDate = findViewById(R.id.addEditTravelDate)
+        addEditTravelFromPlace = findViewById(R.id.addEditTravelFromPlace)
+        addEditTravelFromTime = findViewById(R.id.addEditTravelFromTime)
+        addEditTravelToPlace = findViewById(R.id.addEditTravelToPlace)
+        addEditTravelToTime = findViewById(R.id.addEditTravelToTime)
+        addEditOutboundInfo = findViewById(R.id.addEditOutboundInfo)
+        addSwitchHasReturn = findViewById(R.id.addSwitchHasReturn)
+        addEditReturnSection = findViewById(R.id.addEditReturnSection)
+        addEditReturnDate = findViewById(R.id.addEditReturnDate)
+        addEditReturnFromPlace = findViewById(R.id.addEditReturnFromPlace)
+        addEditReturnFromTime = findViewById(R.id.addEditReturnFromTime)
+        addEditReturnToPlace = findViewById(R.id.addEditReturnToPlace)
+        addEditReturnToTime = findViewById(R.id.addEditReturnToTime)
         btnCancelAdd = findViewById(R.id.btnCancelAdd)
         btnSaveAdd = findViewById(R.id.btnSaveAdd)
 
@@ -129,7 +169,48 @@ class TourDetailActivity : AppCompatActivity() {
         addSpinnerPaid.adapter = spinnerAdapter
 
         addEditDate.setOnClickListener { showAddDatePicker() }
-        addEditAccomDates.setOnClickListener { showAddAccomDatePicker() }
+        val showTimePicker = { field: EditText ->
+            val cal = Calendar.getInstance()
+            TimePickerDialog(this, { _, hour, minute ->
+                field.setText(String.format("%02d:%02d", hour, minute))
+            }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
+        }
+        addEditTravelDate.setOnClickListener {
+            val cal = Calendar.getInstance()
+            DatePickerDialog(this, { _, y, m, d ->
+                addEditTravelDate.setText(String.format("%d/%d/%d", d, m + 1, y))
+            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+        }
+        addEditTravelFromTime.setOnClickListener { showTimePicker(addEditTravelFromTime) }
+        addEditTravelToTime.setOnClickListener { showTimePicker(addEditTravelToTime) }
+        addEditReturnDate.setOnClickListener {
+            val cal = Calendar.getInstance()
+            DatePickerDialog(this, { _, y, m, d ->
+                addEditReturnDate.setText(String.format("%d/%d/%d", d, m + 1, y))
+            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+        }
+        addEditReturnFromTime.setOnClickListener { showTimePicker(addEditReturnFromTime) }
+        addEditReturnToTime.setOnClickListener { showTimePicker(addEditReturnToTime) }
+        addSwitchHasReturn.setOnCheckedChangeListener { _, hasReturn ->
+            addEditReturnSection.visibility = if (hasReturn) View.VISIBLE else View.GONE
+        }
+
+        val showAccomRangePicker = {
+            val picker = MaterialDatePicker.Builder.dateRangePicker()
+                .setTitleText("Select accommodation dates")
+                .build()
+            picker.show(supportFragmentManager, "accom_date_range")
+            picker.addOnPositiveButtonClickListener { selection ->
+                val formatter = SimpleDateFormat("d/M/yyyy", Locale.ENGLISH)
+                val checkIn = formatter.format(selection.first)
+                val checkOut = formatter.format(selection.second)
+                addCheckInDateText.text = checkIn
+                addCheckOutDateText.text = checkOut
+                addEditAccomDates.setText(String.format("%s \u2013 %s", checkIn, checkOut))
+            }
+        }
+        addCheckInButton.setOnClickListener { showAccomRangePicker() }
+        addCheckOutButton.setOnClickListener { showAccomRangePicker() }
 
         headerArchived.setOnClickListener { toggleArchivedSection() }
         btnAddDate.setOnClickListener { enterAddMode() }
@@ -154,6 +235,7 @@ class TourDetailActivity : AppCompatActivity() {
         if (inAddMode) exitAddMode() else super.onBackPressed()
     }
 
+    @android.annotation.SuppressLint("SetTextI18n")
     private fun enterAddMode() {
         inAddMode = true
         // Clear all fields
@@ -164,10 +246,25 @@ class TourDetailActivity : AppCompatActivity() {
         addEditAccommodation.setText("")
         addEditWhereAccomBought.setText("")
         addEditAccomDates.setText("")
+        addCheckInDateText.text = "Add date"
+        addCheckOutDateText.text = "Add date"
         addEditCost.setText("")
         addSpinnerPaid.setSelection(0)
         addEditAccomComments.setText("")
         addEditTravelDetails.setText("")
+        addEditTravelDate.setText("")
+        addEditTravelFromPlace.setText("")
+        addEditTravelFromTime.setText("")
+        addEditTravelToPlace.setText("")
+        addEditTravelToTime.setText("")
+        addEditOutboundInfo.setText("")
+        addSwitchHasReturn.isChecked = true
+        addEditReturnDate.setText("")
+        addEditReturnFromPlace.setText("")
+        addEditReturnFromTime.setText("")
+        addEditReturnToPlace.setText("")
+        addEditReturnToTime.setText("")
+        addEditReturnSection.visibility = View.VISIBLE
 
         listContainer.visibility = View.GONE
         btnAddDate.visibility = View.GONE
@@ -199,6 +296,18 @@ class TourDetailActivity : AppCompatActivity() {
             paid = addSpinnerPaid.selectedItem.toString(),
             accomComments = addEditAccomComments.text.toString(),
             travelDetails = addEditTravelDetails.text.toString(),
+            travelDate = addEditTravelDate.text.toString(),
+            travelFromPlace = addEditTravelFromPlace.text.toString(),
+            travelFromTime = addEditTravelFromTime.text.toString(),
+            travelToPlace = addEditTravelToPlace.text.toString(),
+            travelToTime = addEditTravelToTime.text.toString(),
+            outboundInfo = addEditOutboundInfo.text.toString().ifEmpty { null },
+            hasReturnJourney = addSwitchHasReturn.isChecked,
+            returnDate = if (addSwitchHasReturn.isChecked) addEditReturnDate.text.toString() else null,
+            returnFromPlace = if (addSwitchHasReturn.isChecked) addEditReturnFromPlace.text.toString() else null,
+            returnFromTime = if (addSwitchHasReturn.isChecked) addEditReturnFromTime.text.toString() else null,
+            returnToPlace = if (addSwitchHasReturn.isChecked) addEditReturnToPlace.text.toString() else null,
+            returnToTime = if (addSwitchHasReturn.isChecked) addEditReturnToTime.text.toString() else null,
             isComplete = false,
             isArchived = false
         )
@@ -228,18 +337,9 @@ class TourDetailActivity : AppCompatActivity() {
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
     }
 
-    @SuppressLint("DefaultLocale")
-    private fun showAddAccomDatePicker() {
-        val cal = Calendar.getInstance()
-        DatePickerDialog(this, { _, y1, m1, d1 ->
-            val checkIn = String.format("%d/%d/%d", d1, m1 + 1, y1)
-            DatePickerDialog(this, { _, y2, m2, d2 ->
-                addEditAccomDates.setText("$checkIn – ${String.format("%d/%d/%d", d2, m2 + 1, y2)}")
-            }, y1, m1, d1).also { it.setTitle("Check-out date") }.show()
-        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
-            .also { it.setTitle("Check-in date") }.show()
-    }
 
+
+    @android.annotation.SuppressLint("SetTextI18n")
     private fun refreshPage() {
         val tour = dataManager.getTour(tourId) ?: run { finish(); return }
         supportActionBar?.title = tour.name

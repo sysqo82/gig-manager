@@ -18,6 +18,7 @@ import com.google.android.material.card.MaterialCardView
 import com.google.gson.Gson
 import java.text.SimpleDateFormat
 import java.util.Locale
+import androidx.core.graphics.toColorInt
 
 class ArchiveViewActivity : AppCompatActivity() {
 
@@ -43,6 +44,10 @@ class ArchiveViewActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        toolbar.navigationIcon?.mutate()?.also {
+            androidx.core.graphics.drawable.DrawableCompat.setTint(it, android.graphics.Color.WHITE)
+            toolbar.navigationIcon = it
+        }
 
         artistId = intent.getIntExtra(EXTRA_ARTIST_ID, -1).takeIf { it > 0 }
         val json = intent.getStringExtra(EXTRA_ARCHIVE_JSON) ?: run { finish(); return }
@@ -128,7 +133,7 @@ class ArchiveViewActivity : AppCompatActivity() {
             holder.pillDate.text = formatDisplayDate(gig.date)
             holder.pillCity.text = (gig.cityVenue ?: "").ifEmpty { "Unknown" }
             holder.pillCard.setCardBackgroundColor(
-                if (gig.isComplete == true) Color.parseColor("#C8E6C9")
+                if (gig.isComplete == true) "#C8E6C9".toColorInt()
                 else Color.WHITE
             )
             holder.view.setOnClickListener {

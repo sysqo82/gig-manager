@@ -13,7 +13,8 @@
         android:background="?attr/colorPrimary"
         android:elevation="4dp"
         app:titleTextColor="#FFFFFF"
-        app:subtitleTextColor="#CCCCCC" />
+        app:subtitleTextColor="#CCCCCC"
+        app:navigationIconTint="#FFFFFF" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerArchiveGigs"
