@@ -43,6 +43,8 @@ local.properties
 out/
 *.iml
 .gradle
+*.hprof
+AGENT.md
 /local.properties
 /.idea/
 .DS_Store

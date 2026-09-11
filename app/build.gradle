@@ -11,8 +11,8 @@ android {
         applicationId "com.suede.gigmanager"
         minSdk 24
         targetSdk 34
-        versionCode 19
-        versionName "3.3"
+        versionCode 23
+        versionName "3.7"
     }
 
     buildTypes {
