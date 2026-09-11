@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'jacoco'
 }
 
 android {
@@ -11,14 +12,17 @@ android {
         applicationId "com.suede.gigmanager"
         minSdk 24
         targetSdk 34
-        versionCode 23
-        versionName "3.7"
+        versionCode 24
+        versionName "3.8"
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            enableUnitTestCoverage true
         }
     }
 
@@ -27,19 +31,23 @@ android {
             outputFileName = "gig-manager.apk"
         }
     }
-    
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
         coreLibraryDesugaringEnabled true
     }
-    
+
     kotlinOptions {
         jvmTarget = "11"
     }
-    
+
     buildFeatures {
         viewBinding true
+    }
+
+    testOptions {
+        unitTests.includeAndroidResources = true
     }
 }
 
@@ -58,4 +66,28 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.12.1'
     implementation 'androidx.security:security-crypto:1.1.0-alpha06'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.12.2'
+    testImplementation 'androidx.test:core:1.6.1'
+    testImplementation 'androidx.test.ext:junit:1.2.1'
+    testImplementation 'io.mockk:mockk:1.13.10'
+}
+
+tasks.register('jacocoTestReport', JacocoReport) {
+    dependsOn 'testDebugUnitTest'
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*', 'android/**/*.*']
+    def debugTree = fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug", excludes: fileFilter)
+    def mainSrc = "${project.projectDir}/src/main/java"
+
+    sourceDirectories.setFrom(files([mainSrc]))
+    classDirectories.setFrom(files([debugTree]))
+    executionData.setFrom(fileTree(dir: buildDir, includes: [
+        'outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec',
+        'jacoco/testDebugUnitTest.exec'
+    ]))
 }
