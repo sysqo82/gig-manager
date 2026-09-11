@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.res.Resources
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -16,11 +17,13 @@ import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
@@ -499,9 +502,40 @@ class GigDetailActivity : AppCompatActivity() {
     @SuppressLint("DefaultLocale")
     private fun showTimePicker(field: EditText) {
         val calendar = Calendar.getInstance()
-        TimePickerDialog(this, { _, hour, minute ->
-            field.setText(String.format("%02d:%02d", hour, minute))
-        }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
+        var hour = calendar.get(Calendar.HOUR_OF_DAY)
+        var minute = calendar.get(Calendar.MINUTE)
+        val currentText = field.text.toString().trim()
+        if (currentText.contains(":")) {
+            val parts = currentText.split(":")
+            if (parts.size == 2) {
+                parts[0].toIntOrNull()?.let { hour = it }
+                parts[1].toIntOrNull()?.let { minute = it }
+            }
+        }
+        val dialog = TimePickerDialog(this, { _, h, m ->
+            field.setText(String.format(Locale.ENGLISH, "%02d:%02d", h, m))
+        }, hour, minute, true)
+
+        dialog.setOnShowListener {
+            val modeButtonId = Resources.getSystem().getIdentifier("toggle_mode", "id", "android")
+            val modeButton = if (modeButtonId != 0) dialog.findViewById<View>(modeButtonId) else null
+            if (modeButton != null) {
+                modeButton.performClick()
+            } else {
+                fun findImageButton(view: View): View? {
+                    if (view is ImageButton) return view
+                    if (view is ViewGroup) {
+                        for (i in 0 until view.childCount) {
+                            val child = findImageButton(view.getChildAt(i))
+                            if (child != null) return child
+                        }
+                    }
+                    return null
+                }
+                dialog.window?.decorView?.let { findImageButton(it)?.performClick() }
+            }
+        }
+        dialog.show()
     }
 
     @SuppressLint("DefaultLocale")
